@@ -25,8 +25,8 @@ namespace BotTidus.Server
 
             app.UseAntiforgery();
 
-            app.MapStaticAssets();
-            app.MapRazorComponents<App>();
+            // app.MapStaticAssets();
+            // app.MapRazorComponents<App>();
 
             app.Run();
         }

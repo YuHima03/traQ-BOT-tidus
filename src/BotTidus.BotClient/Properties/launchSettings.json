@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BotTidus.BotClient": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
