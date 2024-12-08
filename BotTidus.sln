@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.BotClient", "src\BotTidus.BotClient\BotTidus.BotClient.csproj", "{F577FB21-6985-41AF-9E79-0A16DB90B34C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.TraqClient", "BotTidus.TraqClient\BotTidus.TraqClient.csproj", "{876F89BD-C4DF-4D2B-808D-38E05FFF681F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.TraqClient", "src\BotTidus.TraqClient\BotTidus.TraqClient.csproj", "{876F89BD-C4DF-4D2B-808D-38E05FFF681F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

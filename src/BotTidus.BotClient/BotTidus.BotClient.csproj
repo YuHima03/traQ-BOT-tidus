@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\BotTidus.TraqClient\BotTidus.TraqClient.csproj" />
+    <ProjectReference Include="..\BotTidus.TraqClient\BotTidus.TraqClient.csproj" />
   </ItemGroup>
 
 </Project>
