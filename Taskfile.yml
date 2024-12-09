@@ -1,0 +1,13 @@
+version: '3'
+
+env:
+    BOT_CLIENT_NAME: bot-tidus/client
+
+tasks:
+    build:
+        cmds:
+        - docker build -f src/BotTidus.BotClient/Dockerfile -t $BOT_CLIENT_NAME .
+
+    up:
+        cmds:
+        - docker run --env-file src/BotTidus.BotClient/.env $BOT_CLIENT_NAME
