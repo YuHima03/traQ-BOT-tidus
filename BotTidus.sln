@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.BotClient", "src\B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.TraqClient", "src\BotTidus.TraqClient\BotTidus.TraqClient.csproj", "{876F89BD-C4DF-4D2B-808D-38E05FFF681F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.TraqBot", "src\BotTidus.TraqBotHost\BotTidus.TraqBot.csproj", "{1BA07671-4BC0-48F1-8B20-9FE589139404}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.TraqBot", "src\BotTidus.TraqBot\BotTidus.TraqBot.csproj", "{1BA07671-4BC0-48F1-8B20-9FE589139404}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
