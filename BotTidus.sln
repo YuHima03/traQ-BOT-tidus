@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.BotClient", "src\B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.TraqClient", "src\BotTidus.TraqClient\BotTidus.TraqClient.csproj", "{876F89BD-C4DF-4D2B-808D-38E05FFF681F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.TraqBotHost", "src\BotTidus.TraqBotHost\BotTidus.TraqBotHost.csproj", "{1BA07671-4BC0-48F1-8B20-9FE589139404}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{876F89BD-C4DF-4D2B-808D-38E05FFF681F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{876F89BD-C4DF-4D2B-808D-38E05FFF681F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{876F89BD-C4DF-4D2B-808D-38E05FFF681F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BA07671-4BC0-48F1-8B20-9FE589139404}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BA07671-4BC0-48F1-8B20-9FE589139404}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BA07671-4BC0-48F1-8B20-9FE589139404}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BA07671-4BC0-48F1-8B20-9FE589139404}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
