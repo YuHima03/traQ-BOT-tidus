@@ -34,7 +34,11 @@ namespace BotTidus.BotClient.BotServices
             {
                 switch (text[ranges[0]])
                 {
+#if DEBUG
+                    case "/_env":
+#else
                     case "/env":
+#endif
                     {
                         if (channel is not null)
                         {
@@ -53,7 +57,11 @@ namespace BotTidus.BotClient.BotServices
                         }
                         break;
                     }
+#if DEBUG
+                    case "/_oisu":
+#else
                     case "/oisu":
+#endif
                     {
                         if (channel is not null)
                         {
