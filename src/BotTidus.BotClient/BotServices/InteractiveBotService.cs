@@ -42,18 +42,24 @@ namespace BotTidus.BotClient.BotServices
                     {
                         if (channel is not null)
                         {
-                            _ = await channel.AddMessageAsync(
-                                $"""
+#if DEBUG
+                            var isDebug = true;
+#else
+                            var isDebug = false;
+#endif
+
+                            var msg = $"""
                                 **BOT_tidus** is running on:
                                 ```yml
                                 Framework: {RuntimeInformation.FrameworkDescription}
+                                IsDebug  : {isDebug}
+                                Memory   : {GC.GetTotalMemory(false)} Bytes (of total allocated {Environment.WorkingSet / (1024 * 1024.0)} MiB)
                                 OS       : {RuntimeInformation.OSDescription}
                                 TimeZone : {TimeZoneInfo.Local}
                                 ```
-                                """,
-                                false,
-                                ct
-                            );
+                                """;
+
+                            _ = await channel.AddMessageAsync(msg, false, ct);
                         }
                         break;
                     }
