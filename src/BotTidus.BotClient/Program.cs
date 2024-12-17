@@ -21,14 +21,17 @@ namespace BotTidus.BotClient
             var botAppBuilder = Host.CreateApplicationBuilder();
 
             botAppBuilder.Services
-                .AddHttpClient()
-                .AddLogging(b => b.AddConsole())
-                .AddTraqClient<ClientTraqService>(b => b
+                .AddLogging(conf => conf
+                    .AddSimpleConsole(options => {
+                        options.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
+                        options.TimestampFormat = "O";
+                    })
+                )
+                .AddTraqClient<ClientTraqService>(conf => conf
                     .SetBaseUri(BaseUri)
                     .UseBearerAuthorization(accessToken)
                 )
-                .AddHostedService<InteractiveBotService>()
-                .AddHostedService<IntervalBotService>();
+                .AddHostedService<InteractiveBotService>();
 
             var botApp = botAppBuilder.Build();
             await botApp.RunAsync();
