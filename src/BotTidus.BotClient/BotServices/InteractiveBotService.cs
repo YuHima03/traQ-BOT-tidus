@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BotTidus.BotClient.BotServices
 {
-    internal class InteractiveBotService(IServiceProvider provider) : TraqBotService(provider)
+    internal class InteractiveBotService(IServiceProvider provider) : TraqWebSocketBotService(provider)
     {
         readonly Traq _traq = provider.GetRequiredService<IClientTraqService>().Traq;
 

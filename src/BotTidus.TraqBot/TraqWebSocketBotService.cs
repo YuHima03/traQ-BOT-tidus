@@ -6,15 +6,15 @@ using System.Net.WebSockets;
 
 namespace BotTidus.TraqBot
 {
-    public class TraqBotService : BackgroundService
+    public class TraqWebSocketBotService : BackgroundService
     {
-        readonly ILogger<TraqBotService>? _logger;
+        readonly ILogger<TraqWebSocketBotService>? _logger;
         readonly IClientTraqService _traq;
         readonly ClientWebSocket _ws;
 
-        public TraqBotService(IServiceProvider provider)
+        public TraqWebSocketBotService(IServiceProvider provider)
         {
-            _logger = provider.GetService<ILogger<TraqBotService>>();
+            _logger = provider.GetService<ILogger<TraqWebSocketBotService>>();
             _traq = provider.GetRequiredService<IClientTraqService>();
             _ws = _traq.CreateClientWebSocket();
         }
