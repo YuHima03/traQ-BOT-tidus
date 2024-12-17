@@ -25,5 +25,15 @@ namespace BotTidus.TraqClient.Models
             }
             return pch;
         }
+
+        public async ValueTask<Channel?> FindAsync(Guid id, CancellationToken ct)
+        {
+            var ch = await _client.GetFromJsonAsync<Channel>($"/api/v3/channels/{id}", ct);
+            if (ch is not null)
+            {
+                ch._client = _client;
+            }
+            return ch;
+        }
     }
 }
