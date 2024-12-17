@@ -16,3 +16,9 @@ tasks:
     down:
         cmds:
         - docker rm -f $BOT_CLIENT_CONTAINER_NAME
+
+    restart:
+        cmds:
+        - task: down
+        - task: build
+        - task: up
