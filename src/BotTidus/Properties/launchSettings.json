@@ -1,11 +1,17 @@
 {
   "profiles": {
-    "BotTidus.BotClient": {
-      "commandName": "Project"
-    },
     "Container (Dockerfile)": {
       "commandName": "Docker",
       "containerRunArguments": "--env-file {ProjectDir}/.env"
+    },
+    "BotTidus": {
+      "commandName": "Project",
+      "commandLineArgs": "--env-files .env;src/BotTidus/.env",
+      "workingDirectory": "$(SolutionDir)",
+      "environmentVariables": {
+        "ON_DOCKER": "false",
+        "DOTNET_ENVIRONMENT": "Development"
+      }
     }
   }
 }
