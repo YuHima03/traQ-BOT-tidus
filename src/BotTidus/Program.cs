@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using Traq;
 
@@ -24,6 +25,15 @@ namespace BotTidus
                 })
                 .ConfigureServices((ctx, services) =>
                 {
+                    services.AddLogging(b => b
+                        .AddSimpleConsole(o =>
+                        {
+                            o.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
+                            o.IncludeScopes = true;
+                        })
+                        .SetMinimumLevel(ctx.HostingEnvironment.IsDevelopment() ? LogLevel.Debug : LogLevel.Information)
+                    );
+
                     services.AddDbContextFactory<Repository.RepositoryContext>(ob =>
                     {
                         ob.UseMySQL(GetConnectionString(ctx));
