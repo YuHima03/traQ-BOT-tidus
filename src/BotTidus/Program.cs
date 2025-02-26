@@ -36,6 +36,11 @@ namespace BotTidus
                     });
 
                     services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time"));
+
+                    services.AddMemoryCache(o =>
+                    {
+                        o.ExpirationScanFrequency = TimeSpan.FromMinutes(1);
+                    });
                 })
                 .Build();
 
