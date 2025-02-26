@@ -51,6 +51,8 @@ namespace BotTidus
                     {
                         o.ExpirationScanFrequency = TimeSpan.FromMinutes(1);
                     });
+
+                    services.AddHostedService<Services.FaceCollectingService>(p => new(p));
                 })
                 .Build();
 
