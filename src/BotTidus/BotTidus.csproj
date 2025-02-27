@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BotTidus.TraqBot\BotTidus.Repository\BotTidus.Repository.csproj" />
+    <ProjectReference Include="..\BotTidus.Repository\BotTidus.Repository.csproj" />
   </ItemGroup>
 
 </Project>

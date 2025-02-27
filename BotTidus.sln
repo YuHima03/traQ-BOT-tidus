@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus", "src\BotTidus\BotTidus.csproj", "{F577FB21-6985-41AF-9E79-0A16DB90B34C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Repository", "src\BotTidus.TraqBot\BotTidus.Repository\BotTidus.Repository.csproj", "{B6CC0CBC-CF77-4368-9F98-14A3538DC57B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Repository", "src\BotTidus.Repository\BotTidus.Repository.csproj", "{B6CC0CBC-CF77-4368-9F98-14A3538DC57B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
