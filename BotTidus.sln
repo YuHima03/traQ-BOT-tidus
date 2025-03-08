@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus", "src\BotTidus\Bo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Repository", "src\BotTidus.Repository\BotTidus.Repository.csproj", "{B6CC0CBC-CF77-4368-9F98-14A3538DC57B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Traq.Extensions.Messages", "libs\dotnet-traq-extensions\src\Traq.Extensions.Messages\Traq.Extensions.Messages.csproj", "{A823A272-DF0B-D70E-1B20-71CDEEE133BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{B6CC0CBC-CF77-4368-9F98-14A3538DC57B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B6CC0CBC-CF77-4368-9F98-14A3538DC57B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B6CC0CBC-CF77-4368-9F98-14A3538DC57B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
