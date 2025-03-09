@@ -231,5 +231,52 @@ namespace BotTidus.ConsoleCommand
                 }
             }
         }
+
+        public bool NextArgument(out ConsoleCommandArgument argument)
+        {
+            if (NextNamedArgument(out var namedArg))
+            {
+                argument = ConsoleCommandArgument.Create(namedArg.Name, namedArg.Value);
+                return true;
+            }
+            else if (NextValueOnly(out var value))
+            {
+                argument = ConsoleCommandArgument.CreateValueOnly(value);
+                return true;
+            }
+            else if (NextArgumentNameOnly(out var name))
+            {
+                argument = ConsoleCommandArgument.CreateNameOnly(name);
+                return true;
+            }
+            else
+            {
+                argument = default;
+                return false;
+            }
+        }
+    }
+
+    public readonly ref struct ConsoleCommandArgument
+    {
+        public bool HasName { get; init; }
+        public bool HasValue { get; init; }
+        public ReadOnlySpan<char> Name { get; init; }
+        public ReadOnlySpan<char> Value { get; init; }
+
+        public static ConsoleCommandArgument Create(ReadOnlySpan<char> name, ReadOnlySpan<char> value)
+        {
+            return new() { HasName = true, HasValue = true, Name = name, Value = value };
+        }
+
+        public static ConsoleCommandArgument CreateNameOnly(ReadOnlySpan<char> name)
+        {
+            return new() { HasName = true, Name = name };
+        }
+
+        public static ConsoleCommandArgument CreateValueOnly(ReadOnlySpan<char> value)
+        {
+            return new() { HasValue = true, Value = value };
+        }
     }
 }
