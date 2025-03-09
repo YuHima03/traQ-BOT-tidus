@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\libs\dotnet-traq-extensions\src\Traq.Extensions.Messages\Traq.Extensions.Messages.csproj" />
-    <ProjectReference Include="..\BotTidus.Repository\BotTidus.Repository.csproj" />
   </ItemGroup>
 
   <ItemGroup>
