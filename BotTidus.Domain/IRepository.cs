@@ -1,5 +1,5 @@
 ﻿namespace BotTidus.Domain
 {
-    interface IRepository :
+    public interface IRepository :
         MessageFaceScores.IMessageFaceScoresRepository;
 }
