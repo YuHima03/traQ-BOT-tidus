@@ -91,16 +91,16 @@ namespace BotTidus
 
             if (onDocker)
             {
-                csb.Server = ctx.Configuration["MARIADB_EXPOSE_HOSTNAME"] ?? ctx.Configuration["NS_MARIADB_HOSTNAME"];
-                if (uint.TryParse(ctx.Configuration["MARIADB_EXPOSE_PORT"], out var _port) || uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out _port))
+                csb.Server = ctx.Configuration["NS_MARIADB_HOSTNAME"];
+                if (uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out var _port))
                 {
                     csb.Port = _port;
                 }
             }
             else
             {
-                csb.Server = ctx.Configuration["NS_MARIADB_HOSTNAME"];
-                if (uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out var _port))
+                csb.Server = ctx.Configuration["MARIADB_EXPOSE_HOSTNAME"] ?? ctx.Configuration["NS_MARIADB_HOSTNAME"];
+                if (uint.TryParse(ctx.Configuration["MARIADB_EXPOSE_PORT"], out var _port) || uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out _port))
                 {
                     csb.Port = _port;
                 }
