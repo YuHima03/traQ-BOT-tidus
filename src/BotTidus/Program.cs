@@ -70,6 +70,7 @@ namespace BotTidus
                     });
 
                     services.AddHostedService<Services.FaceCollectingService>(p => new(p));
+                    services.AddHostedService<Services.InteractiveBotService>();
                 })
                 .Build();
 
