@@ -29,7 +29,7 @@ namespace BotTidus.RepositoryImpl
                 .GroupBy(s => s.UserId)
                 .Select(g => KeyValuePair.Create(
                     g.Key,
-                    g.Select(s => (int)(s.PositivePhraseCount + s.PositiveReactionCount) - (int)(s.NegativePhraseCount + s.NegativeReactionCount)).Sum()
+                    g.Select(s => (int)(s.PositivePhraseCount + s.PositiveReactionCount) - (int)(s.NegativePhraseCount + s.NegativeReactionCount)).Sum() + 1
                     ))
                 .ToArrayAsync(ct);
         }
