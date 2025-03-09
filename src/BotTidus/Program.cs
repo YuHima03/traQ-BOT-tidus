@@ -52,6 +52,23 @@ namespace BotTidus
                         o.ExpirationScanFrequency = TimeSpan.FromMinutes(1);
                     });
 
+                    services.Configure<AppConfig>(conf =>
+                    {
+                        var botName = ctx.Configuration["BOT_NAME"];
+                        if (string.IsNullOrEmpty(botName))
+                        {
+                            throw new Exception("The value of BOT_NAME must be set and be not empty.");
+                        }
+                        conf.BotName = botName;
+
+                        if (Guid.TryParse(ctx.Configuration["BOT_USER_ID"], out var userId))
+                        {
+                            conf.BotUserId = userId;
+                        }
+
+                        conf.BotCommandPrefix = ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//";
+                    });
+
                     services.AddHostedService<Services.FaceCollectingService>(p => new(p));
                 })
                 .Build();
