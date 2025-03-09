@@ -39,7 +39,7 @@ namespace BotTidus.BotCommandHandlers
                         return new() { IsSuccessful = true, Message = "まだ誰も顔の増減が無いようです." };
                     }
 
-                    Array.Sort(faceCounts, (a, b) => a.Value - b.Value);
+                    Array.Sort(faceCounts, (a, b) => a.TotalScore - b.TotalScore);
                     StringBuilder sb = new("""
                         顔ランキング
                         | 順位 | ユーザー | 現在の数 |
@@ -48,13 +48,14 @@ namespace BotTidus.BotCommandHandlers
                     sb.AppendLine();
 
                     int rank = 1;
-                    int prevCount = 0;
+                    int prevCount = int.MinValue;
                     for (int i = 0; i < faceCounts.Length; i++)
                     {
                         var current = faceCounts[i];
-                        var user = await _traq.UserApi.GetUserAsync(current.Key, cancellationToken);
-                        sb.AppendLine($"| {(current.Value == prevCount ? null : rank)} | :@{user.Name}: {user.Name} | {current.Value} |");
-                        prevCount = current.Value;
+                        var user = await _traq.UserApi.GetUserAsync(current.UserId, cancellationToken);
+                        var count = current.TotalScore;
+                        sb.AppendLine($"| {(count == prevCount ? null : rank)} | :@{user.Name}: {user.Name} | {count} |");
+                        prevCount = count;
                         rank++;
                     }
 

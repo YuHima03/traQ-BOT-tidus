@@ -23,13 +23,16 @@ namespace BotTidus.RepositoryImpl
                 .ToArrayAsync(ct);
         }
 
-        async ValueTask<KeyValuePair<Guid, int>[]> IMessageFaceScoresRepository.GetUserFaceCountsAsync(CancellationToken ct)
+        async ValueTask<UserFaceCount[]> IMessageFaceScoresRepository.GetUserFaceCountsAsync(CancellationToken ct)
         {
             return await MessageFaceScores
                 .GroupBy(s => s.UserId)
-                .Select(g => KeyValuePair.Create(
+                .Select(static g => new UserFaceCount(
                     g.Key,
-                    g.Select(s => (int)(s.PositivePhraseCount + s.PositiveReactionCount) - (int)(s.NegativePhraseCount + s.NegativeReactionCount)).Sum() + 1
+                    (uint)g.Sum(s => s.NegativePhraseCount),
+                    (uint)g.Sum(s => s.NegativeReactionCount),
+                    (uint)g.Sum(s => s.PositivePhraseCount),
+                    (uint)g.Sum(s => s.PositiveReactionCount)
                     ))
                 .ToArrayAsync(ct);
         }
