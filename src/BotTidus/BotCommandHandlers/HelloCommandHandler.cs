@@ -15,7 +15,7 @@ namespace BotTidus.BotCommandHandlers
             {
                 IsSuccessful = true,
                 Message = $$"""
-                Hello! !{"type":"user","raw":"@{{_author.Name}}","id":"@{{_author.Id}}"}
+                Hello! !{"type":"user","raw":"@{{_author.Name}}","id":"{{_author.Id}}"}
                 ```plain
                     ____        __     __  _     __              ___
                    / __ )____  / /_   / /_(_)___/ /_  _______   |__ \
