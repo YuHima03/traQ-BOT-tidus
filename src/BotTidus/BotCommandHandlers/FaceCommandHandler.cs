@@ -1,22 +1,25 @@
 ﻿using BotTidus.ConsoleCommand;
+using BotTidus.Domain;
 using BotTidus.Domain.MessageFaceScores;
 using System.Text;
 using Traq;
 
 namespace BotTidus.BotCommandHandlers
 {
-    struct FaceCommandHandler(IMessageFaceScoresRepository repo, ITraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
+    struct FaceCommandHandler(IRepositoryFactory repoFactory, ITraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
     {
-        IMessageFaceScoresRepository _repo = repo;
+        IRepositoryFactory _repoFactory = repoFactory;
         ITraqApiClient _traq = traq;
 
         SubCommands? _subCommand;
         string? _username;
 
-        public bool RequiredArgumentsAreFilled => _subCommand is not null;
+        public readonly bool RequiredArgumentsAreFilled => _subCommand is not null;
 
         public async ValueTask<FaceCommandResult> ExecuteAsync(CancellationToken cancellationToken)
         {
+            IMessageFaceScoresRepository repo = await _repoFactory.CreateRepositoryAsync(cancellationToken);
+
             if (_subCommand is null)
             {
                 return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments };
@@ -30,7 +33,7 @@ namespace BotTidus.BotCommandHandlers
                         return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments };
                     }
 
-                    var faceCounts = await _repo.GetUserFaceCountsAsync(cancellationToken);
+                    var faceCounts = await repo.GetUserFaceCountsAsync(cancellationToken);
                     if (faceCounts.Length == 0)
                     {
                         return new() { IsSuccessful = true, Message = "まだ誰も顔の増減が無いようです." };
@@ -42,6 +45,7 @@ namespace BotTidus.BotCommandHandlers
                         | 順位 | ユーザー | 現在の数 |
                         | ---: | :------ | -------: |
                         """);
+                    sb.AppendLine();
 
                     int rank = 1;
                     int prevCount = 0;
