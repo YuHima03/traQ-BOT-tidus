@@ -1,5 +1,6 @@
 ﻿using BotTidus.BotCommandHandlers;
 using BotTidus.ConsoleCommand;
+using BotTidus.Domain;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Traq;
@@ -7,10 +8,11 @@ using Traq.Bot.Models;
 
 namespace BotTidus.Services
 {
-    sealed class InteractiveBotService(IOptions<AppConfig> appConf, ILogger<InteractiveBotService> logger, ITraqApiClient traq, IServiceProvider provider) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
+    sealed class InteractiveBotService(IOptions<AppConfig> appConf, ILogger<InteractiveBotService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, IServiceProvider provider) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
     {
         readonly AppConfig _appConf = appConf.Value;
         readonly ILogger<InteractiveBotService> _logger = logger;
+        readonly IRepositoryFactory _repoFactory = repoFactory;
         readonly ITraqApiClient _traq = traq;
 
         static readonly Guid StampId_Explosion = new("27475336-812d-4040-9c0e-c7367cd1c966"); // explosion
@@ -52,6 +54,20 @@ namespace BotTidus.Services
 
             switch (reader.CommandName)
             {
+                case "face":
+                {
+                    if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_repoFactory, _traq), ref reader, out var resultTask, ct))
+                    {
+                        var result = await resultTask;
+                        if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
+                        {
+                            await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
+                            return true;
+                        }
+                    }
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
                 case "hello":
                 {
                     if (CommandHandler.TryExecuteCommand<HelloCommandHandler, HelloCommandResult>(new(message.Author), ref reader, out var resultTask, ct))
