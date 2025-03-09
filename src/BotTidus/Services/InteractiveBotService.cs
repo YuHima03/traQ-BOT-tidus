@@ -16,6 +16,11 @@ namespace BotTidus.Services
         static readonly Guid StampId_Explosion = new("27475336-812d-4040-9c0e-c7367cd1c966"); // explosion
         static readonly Guid StampId_Question = new("408b504e-89c1-474b-abfb-16779a3ee595");  // question
 
+        protected override ValueTask OnDirectMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
+        {
+            return OnMessageCreatedAsync(args, ct);
+        }
+
         protected override async ValueTask OnMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
         {
             _logger.LogDebug("Received message: {Message}", args.Message.Text);
