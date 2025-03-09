@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BotTidus.Domain;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -34,10 +35,11 @@ namespace BotTidus
                         .SetMinimumLevel(ctx.HostingEnvironment.IsDevelopment() ? LogLevel.Debug : LogLevel.Information)
                     );
 
-                    services.AddDbContextFactory<Repository.RepositoryContext>(ob =>
+                    services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
                     {
                         ob.UseMySQL(GetConnectionString(ctx));
                     });
+                    services.AddTransient<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
 
                     services.AddTraqApiClient(o =>
                     {
