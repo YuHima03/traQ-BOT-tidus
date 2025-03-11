@@ -23,6 +23,23 @@ namespace BotTidus.RepositoryImpl
                 .ToArrayAsync(ct);
         }
 
+        async ValueTask<UserFaceCount> IMessageFaceScoresRepository.GetUserFaceCountAsync(Guid userId, CancellationToken ct)
+        {
+            return await Database.SqlQuery<UserFaceCount>($"""
+                SELECT
+                    COALESCE(`m`.`user_id`, {userId})               AS `UserId`,
+                    COALESCE(SUM(`m`.`negative_phrase_count`)  , 0) AS `NegativePhraseCount`,
+                    COALESCE(SUM(`m`.`negative_reaction_count`), 0) AS `NegativeReactionCount`,
+                    COALESCE(SUM(`m`.`positive_phrase_count`)  , 0) AS `PositivePhraseCount`,
+                    COALESCE(SUM(`m`.`positive_reaction_count`), 0) AS `PositiveReactionCount`
+                FROM
+                    `message_face_scores` AS `m`
+                WHERE
+                    `m`.`user_id` = {userId}
+                """)
+                .SingleAsync(ct);
+        }
+
         async ValueTask<UserFaceCount[]> IMessageFaceScoresRepository.GetUserFaceCountsAsync(CancellationToken ct)
         {
             return await MessageFaceScores
