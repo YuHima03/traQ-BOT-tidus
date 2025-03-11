@@ -56,7 +56,7 @@ namespace BotTidus.Services
             {
                 case "face":
                 {
-                    if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_repoFactory, _traq), ref reader, out var resultTask, ct))
+                    if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(message.Author, _repoFactory, _traq), ref reader, out var resultTask, ct))
                     {
                         var result = await resultTask;
                         if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))

@@ -1,14 +1,17 @@
 ﻿using BotTidus.ConsoleCommand;
 using BotTidus.Domain;
 using BotTidus.Domain.MessageFaceScores;
+using BotTidus.Helpers;
 using System.Text;
 using Traq;
+using Traq.Bot.Models;
 
 namespace BotTidus.BotCommandHandlers
 {
-    struct FaceCommandHandler(IRepositoryFactory repoFactory, ITraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
+    struct FaceCommandHandler(BotEventUser sender, IRepositoryFactory repoFactory, ITraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
     {
         IRepositoryFactory _repoFactory = repoFactory;
+        BotEventUser _sender = sender;
         ITraqApiClient _traq = traq;
 
         SubCommands? _subCommand;
@@ -26,6 +29,50 @@ namespace BotTidus.BotCommandHandlers
             }
             switch (_subCommand)
             {
+                case SubCommands.DisplayCount:
+                {
+                    string username = _sender.Name;
+                    Guid userId = _sender.Id;
+                    if (_username is not null)
+                    {
+                        if (Traq.Extensions.Messages.Embedding.TryParseHead(_username.AsSpan(), out var embedding) == _username.Length)
+                        {
+                            if (embedding.Type != Traq.Extensions.Messages.EmbeddingType.UserMention)
+                            {
+                                return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "The embedding is not mentioning a user." };
+                            }
+                            username = embedding.DisplayText.StartsWith("@") ? embedding.DisplayText[1..].ToString() : embedding.DisplayText.ToString();
+                            userId = embedding.EmbeddedId;
+                        }
+                        else if (await TraqHelper.TryGetUserIdFromNameAsync(_traq.UserApi, _username, out var userTask, cancellationToken))
+                        {
+                            username = _username;
+                            userId = (await userTask).Id;
+                        }
+                        else
+                        {
+                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.InternalError, Message = $"User not found: {_username}" };
+                        }
+                    }
+
+                    var count = await repo.GetUserFaceCountAsync(userId, cancellationToken);
+                    return new()
+                    {
+                        IsSuccessful = true,
+                        Message = count switch
+                        {
+                            { NegativePhraseCount: 0, NegativeReactionCount: 0, PositivePhraseCount: 0, PositiveReactionCount: 0 } => $$"""
+                            :@{{username}}: {{username}} の現在の顔: **{{count.TotalScore}}** 個
+                            顔の増減はまだないようです.
+                            """,
+                            _ => $$"""
+                            :@{{username}}: {{username}} の現在の顔: **{{count.TotalScore}}** 個
+                            - :dotted_line_face: {{count.NegativePhraseCount + count.NegativeReactionCount}} 回
+                            - :star_struck: {{count.PositivePhraseCount + count.PositiveReactionCount}} 回
+                            """
+                        }
+                    };
+                }
                 case SubCommands.DisplayRanking:
                 {
                     if (_username is not null)
@@ -91,7 +138,7 @@ namespace BotTidus.BotCommandHandlers
                                 return false;
                             }
                             _username = arg.Value.ToString();
-                            break;
+                            return true;
                     }
                 }
                 return false;
