@@ -144,91 +144,135 @@ namespace BotTidus.ConsoleCommand
                     return 0;
                 }
 
-                int leadingSpaces = 0;
-                int valueLength = 0;
-
-                bool beginsWithQuotationMark = false;
-
                 using var en = new Traq.Extensions.Messages.MessageElementEnumerator(s);
 
                 _ = en.MoveNext();
-                var e = en.Current;
-                if (e.Kind == Traq.Extensions.Messages.MessageElementKind.NormalText)
+                var current = en.Current;
+                if (current.Kind != Traq.Extensions.Messages.MessageElementKind.NormalText)
                 {
-                    var text = e.GetText().TrimStart(out leadingSpaces);
-                    if (!text.IsEmpty)
-                    {
-                        valueLength += text.Length;
-                        beginsWithQuotationMark = text[0] == '"';
-                    }
-                }
-                else
-                {
-                    valueLength += e.RawText.Length;
+                    value = current.RawText;
+                    return current.RawText.Length;
                 }
 
-                if (beginsWithQuotationMark)
+                var text = current.GetText().TrimStart(out var leadingSpaces);
+                if (text.IsEmpty)
                 {
+                    if (!en.MoveNext())
+                    {
+                        value = default;
+                        return 0;
+                    }
+                    current = en.Current;
+                    value = current.RawText;
+                    return leadingSpaces + current.RawText.Length;
+                }
+
+                if (text[0] != '"')
+                {
+                    var idx = findWhitespace(text);
+                    if (idx != -1)
+                    {
+                        value = text[..idx];
+                        return leadingSpaces + idx;
+                    }
+
+                    var valueLength = leadingSpaces + text.Length;
                     while (en.MoveNext())
                     {
-                        e = en.Current;
-                        if (e.Kind == Traq.Extensions.Messages.MessageElementKind.NormalText)
+                        current = en.Current;
+                        if (current.Kind == Traq.Extensions.Messages.MessageElementKind.NormalText)
                         {
-                            var text = e.GetText();
-                            var escaping = false;
-                            for (int i = 0; i < text.Length; i++)
+                            idx = findWhitespace(current.RawText);
+                            if (idx != -1)
                             {
-                                if (escaping)
-                                {
-                                    escaping = false;
-                                }
-                                else if (text[i] == '\\')
-                                {
-                                    escaping = true;
-                                }
-                                else if (text[i] == '"')
-                                {
-                                    valueLength += i;
-                                    value = s.Slice(leadingSpaces + 1, valueLength - 1);
-                                    return leadingSpaces + valueLength + 1;
-                                }
+                                /*
+                                 * |<--- valueLength --->|
+                                 * |                     |
+                                 *     valueText@embedding?foo bar
+                                 * |  |                   |  |
+                                 * |<>|                   |<>|
+                                 *   leadingSpaces          idx
+                                 */
+                                value = s[(leadingSpaces + 1)..(valueLength + idx)];
+                                return valueLength + idx + 1;
                             }
                         }
-                        valueLength += e.RawText.Length;
                     }
                 }
                 else
                 {
+                    var idx = findQuotationMark(text[1..]);
+                    if (idx != -1)
+                    {
+                        /*
+                         *     |<- {text} ->|
+                         *     |            |
+                         *     "argument"
+                         * |  | |      |
+                         * |<>| |< idx>|
+                         *   leadingSpaces
+                         */
+                        value = text[1..(idx + 1)];
+                        return leadingSpaces + idx + 2;
+                    }
+
+                    var valueLength = leadingSpaces + text.Length;
                     while (en.MoveNext())
                     {
-                        e = en.Current;
-                        if (e.Kind == Traq.Extensions.Messages.MessageElementKind.NormalText)
+                        current = en.Current;
+                        if (current.Kind == Traq.Extensions.Messages.MessageElementKind.NormalText)
                         {
-                            var text = e.GetText();
-                            for (int i = 0; i < text.Length; i++)
+                            idx = findQuotationMark(current.RawText);
+                            if (idx != 1)
                             {
-                                if (char.IsWhiteSpace(text[i]))
-                                {
-                                    valueLength += i;
-                                    value = s.Slice(leadingSpaces, valueLength);
-                                    return leadingSpaces + i;
-                                }
+                                /*
+                                 * |<---- valueLength ---->|
+                                 * |                       |
+                                 *     "argument @embedding text"
+                                 * |  |                     |  |
+                                 * |<>|                     |<>|
+                                 *   leadingSpaces            idx
+                                 */
+                                value = s[(leadingSpaces + 1)..(valueLength + idx)];
+                                return valueLength + idx + 1;
                             }
                         }
-                        valueLength += e.RawText.Length;
+                        valueLength += current.RawText.Length;
                     }
                 }
 
-                if (beginsWithQuotationMark)
+                value = s[leadingSpaces..];
+                return s.Length;
+            }
+
+            static int findQuotationMark(ReadOnlySpan<char> s)
+            {
+                for (int i = 0; i < s.Length; i++)
                 {
-                    value = default;
-                    return 0;
+                    var c = s[i];
+                    if (c == '\\')
+                    {
+                        i++;
+                        continue;
+                    }
+                    else if (c == '"')
+                    {
+                        return i;
+                    }
                 }
-                else
+                return -1;
+            }
+
+            static int findWhitespace(ReadOnlySpan<char> s)
+            {
+                for (int i = 0; i < s.Length; i++)
                 {
-                    value = s[leadingSpaces..];
-                    return s.Length;
+                    if (char.IsWhiteSpace(s[i]))
+                    {
+                        return i;
+                    }
                 }
+                return -1;
             }
         }
 
