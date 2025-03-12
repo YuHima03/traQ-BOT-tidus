@@ -118,6 +118,12 @@ namespace BotTidus.Services
                     await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Explosion, new Traq.Model.PostMessageStampRequest(1), ct);
                     break;
                 }
+                case CommandErrorType.PermissionDenied:
+                {
+                    _logger.LogDebug("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
+                    await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_PermissionDenied, new Traq.Model.PostMessageStampRequest(1), ct);
+                    break;
+                }
                 default:
                 {
                     _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
