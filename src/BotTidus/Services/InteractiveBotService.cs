@@ -57,54 +57,54 @@ namespace BotTidus.Services
             switch (reader.CommandName)
             {
                 case "face":
-                {
-                    if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(message.Author, _repoFactory, _traq), ref reader, out var resultTask, ct))
                     {
-                        var result = await resultTask;
-                        if (result.IsSuccessful)
+                        if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(message.Author, _repoFactory, _traq), ref reader, out var resultTask, ct))
                         {
-                            if (!string.IsNullOrWhiteSpace(result.Message))
+                            var result = await resultTask;
+                            if (result.IsSuccessful)
+                            {
+                                if (!string.IsNullOrWhiteSpace(result.Message))
+                                {
+                                    await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
+                                }
+                                else if (result.ReactionStampId is not null)
+                                {
+                                    await _traq.MessageApi.AddMessageStampAsync(message.Id, result.ReactionStampId.Value, new Traq.Model.PostMessageStampRequest(1), ct);
+                                }
+                                return true;
+                            }
+                        }
+                        await HandleCommandError(message, await resultTask, ct);
+                        return false;
+                    }
+                case "hello":
+                    {
+                        if (CommandHandler.TryExecuteCommand<HelloCommandHandler, HelloCommandResult>(new(message.Author), ref reader, out var resultTask, ct))
+                        {
+                            var result = await resultTask;
+                            if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
                             {
                                 await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
+                                return true;
                             }
-                            else if (result.ReactionStampId is not null)
-                            {
-                                await _traq.MessageApi.AddMessageStampAsync(message.Id, result.ReactionStampId.Value, new Traq.Model.PostMessageStampRequest(1), ct);
-                            }
-                            return true;
                         }
+                        await HandleCommandError(message, await resultTask, ct);
+                        return false;
                     }
-                    await HandleCommandError(message, await resultTask, ct);
-                    return false;
-                }
-                case "hello":
-                {
-                    if (CommandHandler.TryExecuteCommand<HelloCommandHandler, HelloCommandResult>(new(message.Author), ref reader, out var resultTask, ct))
-                    {
-                        var result = await resultTask;
-                        if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
-                        {
-                            await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
-                            return true;
-                        }
-                    }
-                    await HandleCommandError(message, await resultTask, ct);
-                    return false;
-                }
                 case "help":
-                {
-                    if (CommandHandler.TryExecuteCommand<HelpCommandHandler, HelpCommandResult>(new(), ref reader, out var resultTask, ct))
                     {
-                        var result = await resultTask;
-                        if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
+                        if (CommandHandler.TryExecuteCommand<HelpCommandHandler, HelpCommandResult>(new(), ref reader, out var resultTask, ct))
                         {
-                            await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
-                            return true;
+                            var result = await resultTask;
+                            if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
+                            {
+                                await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
+                                return true;
+                            }
                         }
+                        await HandleCommandError(message, await resultTask, ct);
+                        return false;
                     }
-                    await HandleCommandError(message, await resultTask, ct);
-                    return false;
-                }
             }
 
             // Unknown command
@@ -120,23 +120,23 @@ namespace BotTidus.Services
             switch (result.ErrorType)
             {
                 case CommandErrorType.InternalError:
-                {
-                    _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Explosion, new Traq.Model.PostMessageStampRequest(1), ct);
-                    break;
-                }
+                    {
+                        _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
+                        await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Explosion, new Traq.Model.PostMessageStampRequest(1), ct);
+                        break;
+                    }
                 case CommandErrorType.PermissionDenied:
-                {
-                    _logger.LogDebug("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_PermissionDenied, new Traq.Model.PostMessageStampRequest(1), ct);
-                    break;
-                }
+                    {
+                        _logger.LogDebug("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
+                        await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_PermissionDenied, new Traq.Model.PostMessageStampRequest(1), ct);
+                        break;
+                    }
                 default:
-                {
-                    _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Question, new Traq.Model.PostMessageStampRequest(1), ct);
-                    break;
-                }
+                    {
+                        _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
+                        await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Question, new Traq.Model.PostMessageStampRequest(1), ct);
+                        break;
+                    }
             }
         }
     }
