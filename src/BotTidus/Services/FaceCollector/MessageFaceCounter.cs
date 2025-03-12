@@ -40,22 +40,11 @@ namespace BotTidus.Services.FaceCollector
 
             static int countFaceSingle(ReadOnlySpan<char> str, int currentTotalCount, out int charsUsed)
             {
-                str = str.TrimStart(c => c != '超' && c != '顔', out var trimmedLeading);
+                str = str.TrimStart(c => c != '顔', out var trimmedLeading);
                 charsUsed = trimmedLeading;
                 if (str.IsEmpty)
                 {
                     return 0;
-                }
-
-                int doubling = 0;
-                if (str[0] == '超')
-                {
-                    str = str.TrimStart(['超'], out doubling);
-                    if (str.IsEmpty || str[0] != '顔')
-                    {
-                        charsUsed += doubling;
-                        return 0;
-                    }
                 }
 
                 // Now, it is ensured that str is not empty and str[0] is '顔'.
@@ -75,12 +64,6 @@ namespace BotTidus.Services.FaceCollector
                 {
                     str = str[1..]; // Trim leading "顔".
                     charsUsed += 1;
-                }
-
-                if (doubling == 0 && str[0] == '超')
-                {
-                    str = str.TrimStart(['超'], out doubling);
-                    charsUsed += doubling;
                 }
 
                 int result = 0;
@@ -143,7 +126,6 @@ namespace BotTidus.Services.FaceCollector
                     }
                     else if (sliced is "七面鳥")
                     {
-                        doubling = 0;
                         charsUsed += 3;
                         result = 7;
                         goto returnResult;
@@ -186,7 +168,6 @@ namespace BotTidus.Services.FaceCollector
                     var sliced = str[..5];
                     if (sliced == "ケルベロス")
                     {
-                        doubling = 0;
                         charsUsed += 5;
                         result = 3;
                         goto returnResult;
@@ -222,7 +203,6 @@ namespace BotTidus.Services.FaceCollector
                 {
                     if (str[..7] is "ヤマタノオロチ")
                     {
-                        doubling = 0;
                         charsUsed += 7;
                         result = 8;
                         goto returnResult;
@@ -244,7 +224,7 @@ namespace BotTidus.Services.FaceCollector
                 }
 
             returnResult:
-                return result * (1 << Math.Min(4, doubling));
+                return result;
             }
         }
     }
