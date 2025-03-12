@@ -1,7 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BotTidus.Domain;
+using BotTidus.Services.FaceCollector;
+using BotTidus.Services.InteractiveBot;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using Traq;
 
@@ -24,10 +28,30 @@ namespace BotTidus
                 })
                 .ConfigureServices((ctx, services) =>
                 {
-                    services.AddDbContextFactory<Repository.RepositoryContext>(ob =>
+                    services.AddLogging(b =>
+                    {
+                        b.AddSimpleConsole(o =>
+                            {
+                                o.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
+                                o.IncludeScopes = true;
+                            })
+                            .SetMinimumLevel(ctx.HostingEnvironment.IsDevelopment() ? LogLevel.Debug : LogLevel.Information);
+
+                        if (!ctx.HostingEnvironment.IsDevelopment())
+                        {
+                            b.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", l => LogLevel.Warning <= l);
+                        }
+                    });
+
+                    services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
                     {
                         ob.UseMySQL(GetConnectionString(ctx));
+                        if (ctx.HostingEnvironment.IsDevelopment())
+                        {
+                            ob.EnableSensitiveDataLogging();
+                        }
                     });
+                    services.AddTransient<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
 
                     services.AddTraqApiClient(o =>
                     {
@@ -41,6 +65,30 @@ namespace BotTidus
                     {
                         o.ExpirationScanFrequency = TimeSpan.FromMinutes(1);
                     });
+
+                    services.Configure<AppConfig>(conf =>
+                    {
+                        var botName = ctx.Configuration["BOT_NAME"];
+                        if (string.IsNullOrEmpty(botName))
+                        {
+                            throw new Exception("The value of BOT_NAME must be set and be not empty.");
+                        }
+                        conf.BotName = botName;
+
+                        if (Guid.TryParse(ctx.Configuration["ADMIN_USER_ID"], out var adminUserId))
+                        {
+                            conf.AdminUserId = adminUserId;
+                        }
+                        if (Guid.TryParse(ctx.Configuration["BOT_USER_ID"], out var botUserId))
+                        {
+                            conf.BotUserId = botUserId;
+                        }
+
+                        conf.BotCommandPrefix = ctx.Configuration["BOT_COMMAND_PREFIX"] ?? (ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//");
+                    });
+
+                    services.AddHostedService<FaceCollectingService>();
+                    services.AddHostedService<InteractiveBotService>();
                 })
                 .Build();
 
@@ -61,16 +109,16 @@ namespace BotTidus
 
             if (onDocker)
             {
-                csb.Server = ctx.Configuration["MARIADB_EXPOSE_HOSTNAME"] ?? ctx.Configuration["NS_MARIADB_HOSTNAME"];
-                if (uint.TryParse(ctx.Configuration["MARIADB_EXPOSE_PORT"], out var _port) || uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out _port))
+                csb.Server = ctx.Configuration["NS_MARIADB_HOSTNAME"];
+                if (uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out var _port))
                 {
                     csb.Port = _port;
                 }
             }
             else
             {
-                csb.Server = ctx.Configuration["NS_MARIADB_HOSTNAME"];
-                if (uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out var _port))
+                csb.Server = ctx.Configuration["MARIADB_EXPOSE_HOSTNAME"] ?? ctx.Configuration["NS_MARIADB_HOSTNAME"];
+                if (uint.TryParse(ctx.Configuration["MARIADB_EXPOSE_PORT"], out var _port) || uint.TryParse(ctx.Configuration["NS_MARIADB_PORT"], out _port))
                 {
                     csb.Port = _port;
                 }

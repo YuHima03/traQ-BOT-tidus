@@ -2,6 +2,17 @@ version: '3'
 
 tasks:
 
+  install-libs:
+    cmds:
+      - task: _install-traq-extensions
+
+  _install-traq-extensions:
+    internal: true
+    dir: libs
+    cmds:
+      - git clone git@github.com:YuHima03/dotnet-traq-extensions.git
+      - cd dotnet-traq-extensions && git checkout feat/message-extensions
+
   dev-up:
     cmds:
     - docker compose up -d --build
