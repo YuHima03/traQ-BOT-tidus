@@ -7,9 +7,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus", "src\BotTidus\Bo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Traq.Extensions.Messages", "libs\dotnet-traq-extensions\src\Traq.Extensions.Messages\Traq.Extensions.Messages.csproj", "{A823A272-DF0B-D70E-1B20-71CDEEE133BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Domain", "BotTidus.Domain\BotTidus.Domain.csproj", "{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Domain", "src\BotTidus.Domain\BotTidus.Domain.csproj", "{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.RepositoryImpl", "BotTidus.RepositoryImpl\BotTidus.RepositoryImpl.csproj", "{81015769-269E-4544-B643-ED34DA7196D0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.RepositoryImpl", "src\BotTidus.RepositoryImpl\BotTidus.RepositoryImpl.csproj", "{81015769-269E-4544-B643-ED34DA7196D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
