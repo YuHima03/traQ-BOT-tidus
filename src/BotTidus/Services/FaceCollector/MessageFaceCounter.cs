@@ -5,6 +5,7 @@ namespace BotTidus.Services.FaceCollector
     static class MessageFaceCounter
     {
         public static (int PoitiveCount, int NegativeCount) Count(ReadOnlySpan<char> traqMessageText, int currentTotalCount)
+        public static (uint PositiveCount, uint NegativeCount) Count(ReadOnlySpan<char> traqMessageText, int currentTotalCount)
         {
             int posCnt = 0;
             int negCnt = 0;
@@ -36,7 +37,7 @@ namespace BotTidus.Services.FaceCollector
                     }
                 }
             }
-            return (posCnt, negCnt);
+            return ((uint)posCnt, (uint)negCnt);
 
             static int countFaceSingle(ReadOnlySpan<char> str, int currentTotalCount, out int charsUsed)
             {
