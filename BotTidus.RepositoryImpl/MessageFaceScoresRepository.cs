@@ -5,9 +5,30 @@ namespace BotTidus.RepositoryImpl
 {
     public sealed partial class Repository
     {
-        ValueTask IMessageFaceScoresRepository.AddMessageFaceScoreAsync(MessageFaceScore score, CancellationToken ct)
+        async ValueTask IMessageFaceScoresRepository.AddMessageFaceScoreAsync(MessageFaceScore score, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            _ = await MessageFaceScores.AddAsync(new Models.MessageFaceScore()
+            {
+                MessageId = score.MessageId,
+                UserId = score.AuthorId,
+                NegativePhraseCount = score.NegativePhraseCount,
+                NegativeReactionCount = score.NegativeReactionCount,
+                PositivePhraseCount = score.PositivePhraseCount,
+                PositiveReactionCount = score.PositiveReactionCount
+            }, ct);
+            await SaveChangesAsync(ct);
+            return;
+        }
+
+        async ValueTask IMessageFaceScoresRepository.DeleteMessageFaceScoreAsync(Guid id, CancellationToken ct)
+        {
+            var records = await MessageFaceScores.Where(r => r.MessageId == id).ToArrayAsync(ct);
+            foreach (var r in records)
+            {
+                MessageFaceScores.Remove(r);
+            }
+            await SaveChangesAsync(ct);
+            return;
         }
 
         ValueTask<MessageFaceScore> IMessageFaceScoresRepository.GetMessageFaceScoreAsync(Guid id, CancellationToken ct)
