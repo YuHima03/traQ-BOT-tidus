@@ -28,18 +28,28 @@ namespace BotTidus
                 })
                 .ConfigureServices((ctx, services) =>
                 {
-                    services.AddLogging(b => b
-                        .AddSimpleConsole(o =>
+                    services.AddLogging(b =>
+                    {
+                        b.AddSimpleConsole(o =>
+                            {
+                                o.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
+                                o.IncludeScopes = true;
+                            })
+                            .SetMinimumLevel(ctx.HostingEnvironment.IsDevelopment() ? LogLevel.Debug : LogLevel.Information);
+
+                        if (!ctx.HostingEnvironment.IsDevelopment())
                         {
-                            o.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
-                            o.IncludeScopes = true;
-                        })
-                        .SetMinimumLevel(ctx.HostingEnvironment.IsDevelopment() ? LogLevel.Debug : LogLevel.Information)
-                    );
+                            b.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", l => LogLevel.Warning <= l);
+                        }
+                    });
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
                     {
                         ob.UseMySQL(GetConnectionString(ctx));
+                        if (ctx.HostingEnvironment.IsDevelopment())
+                        {
+                            ob.EnableSensitiveDataLogging();
+                        }
                     });
                     services.AddTransient<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
 
