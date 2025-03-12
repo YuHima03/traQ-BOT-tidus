@@ -1,5 +1,6 @@
 ﻿using BotTidus.Domain;
 using BotTidus.Services.FaceCollector;
+using BotTidus.Services.InteractiveBot;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,11 +70,11 @@ namespace BotTidus
                             conf.BotUserId = userId;
                         }
 
-                        conf.BotCommandPrefix = ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//";
+                        conf.BotCommandPrefix = ctx.Configuration["BOT_COMMAND_PREFIX"] ?? (ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//");
                     });
 
                     services.AddHostedService<FaceCollectingService>();
-                    services.AddHostedService<Services.InteractiveBotService>();
+                    services.AddHostedService<InteractiveBotService>();
                 })
                 .Build();
 

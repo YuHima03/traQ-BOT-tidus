@@ -1,6 +1,6 @@
 ﻿using BotTidus.ConsoleCommand;
 
-namespace BotTidus.BotCommandHandlers
+namespace BotTidus.Services.InteractiveBot.CommandHandlers
 {
     readonly struct HelpCommandHandler : IAsyncConsoleCommandHandler<HelpCommandResult>
     {

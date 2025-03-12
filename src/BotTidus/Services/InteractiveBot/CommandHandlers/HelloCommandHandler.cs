@@ -1,7 +1,7 @@
 ﻿using BotTidus.ConsoleCommand;
 using Traq.Bot.Models;
 
-namespace BotTidus.BotCommandHandlers
+namespace BotTidus.Services.InteractiveBot.CommandHandlers
 {
     readonly struct HelloCommandHandler(BotEventUser author) : IAsyncConsoleCommandHandler<HelloCommandResult>
     {

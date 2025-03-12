@@ -1,12 +1,12 @@
-﻿using BotTidus.BotCommandHandlers;
-using BotTidus.ConsoleCommand;
+﻿using BotTidus.ConsoleCommand;
 using BotTidus.Domain;
+using BotTidus.Services.InteractiveBot.CommandHandlers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Traq;
 using Traq.Bot.Models;
 
-namespace BotTidus.Services
+namespace BotTidus.Services.InteractiveBot
 {
     sealed class InteractiveBotService(IOptions<AppConfig> appConf, ILogger<InteractiveBotService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, IServiceProvider provider) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
     {
@@ -44,7 +44,7 @@ namespace BotTidus.Services
             }
 
             bool isStartWithMention;
-            if (isStartWithMention = (commandText[0] == '@' && commandText[1..].StartsWith(_appConf.BotName, StringComparison.OrdinalIgnoreCase)))
+            if (isStartWithMention = commandText[0] == '@' && commandText[1..].StartsWith(_appConf.BotName, StringComparison.OrdinalIgnoreCase))
             {
                 commandText = commandText[(_appConf.BotName.Length + 1)..];
             }

@@ -2,13 +2,13 @@
 using BotTidus.Domain;
 using BotTidus.Domain.MessageFaceScores;
 using BotTidus.Helpers;
-using BotTidus.Services;
 using BotTidus.Services.FaceCollector;
+using BotTidus.Services.InteractiveBot;
 using System.Text;
 using Traq;
 using Traq.Bot.Models;
 
-namespace BotTidus.BotCommandHandlers
+namespace BotTidus.Services.InteractiveBot.CommandHandlers
 {
     struct FaceCommandHandler(BotEventUser sender, IRepositoryFactory repoFactory, ITraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
     {
@@ -116,7 +116,7 @@ namespace BotTidus.BotCommandHandlers
                                     username = embedding.DisplayText.StartsWith("@") ? embedding.DisplayText[1..].ToString() : embedding.DisplayText.ToString();
                                     userId = embedding.EmbeddedId;
                                 }
-                                else if (await TraqHelper.TryGetUserIdFromNameAsync(_traq.UserApi, _username, out var userTask, cancellationToken))
+                                else if (await _traq.UserApi.TryGetUserIdFromNameAsync(_username, out var userTask, cancellationToken))
                                 {
                                     username = _username;
                                     userId = (await userTask).Id;
