@@ -2,6 +2,8 @@
 using BotTidus.Domain;
 using BotTidus.Domain.MessageFaceScores;
 using BotTidus.Helpers;
+using BotTidus.Services;
+using BotTidus.Services.FaceCollector;
 using System.Text;
 using Traq;
 using Traq.Bot.Models;
@@ -14,6 +16,7 @@ namespace BotTidus.BotCommandHandlers
         BotEventUser _sender = sender;
         ITraqApiClient _traq = traq;
 
+        string? _messageIdOrUri;
         SubCommands? _subCommand;
         string? _username;
 
@@ -27,8 +30,38 @@ namespace BotTidus.BotCommandHandlers
             {
                 return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments };
             }
+
+            try
+            {
             switch (_subCommand)
             {
+                    case SubCommands.CancelMessageFaceCount:
+                    {
+                        if (!string.Equals(_sender.Name, "tidus", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.PermissionDenied };
+                        }
+                        if (_messageIdOrUri is null)
+                        {
+                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "Message id or uri is required." };
+                        }
+
+                        Guid messageId;
+                        if (!Guid.TryParse(_messageIdOrUri, out messageId))
+                        {
+                            if (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
+                                || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId))
+                            {
+                                return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = $"Invalid message uri: {_messageIdOrUri}" };
+                            }
+                        }
+                        await Task.WhenAll(
+                            repo.DeleteMessageFaceScoreAsync(messageId, cancellationToken).AsTask(),
+                            _traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
+                            _traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
+                            );
+                        return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
+                    }
                 case SubCommands.DisplayCount:
                 {
                     string username = _sender.Name;
@@ -108,6 +141,11 @@ namespace BotTidus.BotCommandHandlers
 
                     return new() { IsSuccessful = true, Message = sb.ToString() };
                 }
+                }
+            }
+            catch (Exception ex)
+            {
+                return new() { IsSuccessful = false, ErrorType = CommandErrorType.InternalError, Message = ex.Message };
             }
             return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments };
         }
@@ -120,37 +158,44 @@ namespace BotTidus.BotCommandHandlers
             }
             _subCommand = subcommand switch
             {
+                "cancel" => SubCommands.CancelMessageFaceCount,
                 "count" => SubCommands.DisplayCount,
                 "rank" => SubCommands.DisplayRanking,
                 _ => SubCommands.Unknown
             };
 
-            while (reader.NextArgument(out var arg))
+            if (_subCommand == SubCommands.CancelMessageFaceCount)
             {
-                if (arg.HasName && arg.HasValue)
+                if (!reader.NextValueOnly(out var message))
                 {
-                    switch (arg.Name)
+                    return false;
+                }
+                _messageIdOrUri = message.ToString();
+            }
+            else if (_subCommand == SubCommands.DisplayCount)
+            {
+                if (reader.NextNamedArgument(out var arg))
+                {
+                    if (arg.Name is "-u" or "--user")
                     {
-                        case "--user":
-                        case "-u":
                             if (_username is not null)
                             {
                                 return false;
                             }
                             _username = arg.Value.ToString();
-                            return true;
                     }
                 }
-                return false;
             }
-            return true;
+
+            return reader.EnumeratedAll;
         }
 
         enum SubCommands : byte
         {
             Unknown = 0,
             DisplayCount,
-            DisplayRanking
+            DisplayRanking,
+            CancelMessageFaceCount
         }
     }
 
