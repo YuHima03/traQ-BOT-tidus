@@ -15,8 +15,10 @@ namespace BotTidus.Services
         readonly IRepositoryFactory _repoFactory = repoFactory;
         readonly ITraqApiClient _traq = traq;
 
-        static readonly Guid StampId_Explosion = new("27475336-812d-4040-9c0e-c7367cd1c966"); // explosion
-        static readonly Guid StampId_Question = new("408b504e-89c1-474b-abfb-16779a3ee595");  // question
+        public static readonly Guid StampId_Explosion = new("27475336-812d-4040-9c0e-c7367cd1c966");        // explosion
+        public static readonly Guid StampId_Question = new("408b504e-89c1-474b-abfb-16779a3ee595");         // question
+        public static readonly Guid StampId_Success = new("93d376c3-80c9-4bb2-909b-2bbe2fbf9e93");          // white_check_mark
+        public static readonly Guid StampId_PermissionDenied = new("544c04db-9cc3-4c0e-935d-571d4cf103a2"); // no_entry_sign
 
         protected override ValueTask OnDirectMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
         {

@@ -4,7 +4,9 @@ namespace BotTidus.Services.FaceCollector
 {
     static class MessageFaceCounter
     {
-        public static (int PoitiveCount, int NegativeCount) Count(ReadOnlySpan<char> traqMessageText, int currentTotalCount)
+        public static readonly Guid PositiveReactionGuid = new("551cd654-33ec-4e7d-8d22-ac0fc7f799d4");
+        public static readonly Guid NegativeReactionGuid = new("12e38ec1-d76f-4544-a2ee-c2abba7ac20e");
+
         public static (uint PositiveCount, uint NegativeCount) Count(ReadOnlySpan<char> traqMessageText, int currentTotalCount)
         {
             int posCnt = 0;
