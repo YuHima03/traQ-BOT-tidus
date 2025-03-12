@@ -6,12 +6,12 @@ namespace BotTidus.RepositoryImpl.Models
     [Table("message_face_scores")]
     sealed class MessageFaceScore
     {
-        [Column("user_id")]
-        [Key]
-        public Guid UserId { get; set; }
-
         [Column("message_id")]
+        [Key]
         public Guid MessageId { get; set; }
+
+        [Column("user_id")]
+        public Guid UserId { get; set; }
 
         [Column("positive_phrase_count")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
