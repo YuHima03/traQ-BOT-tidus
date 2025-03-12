@@ -6,6 +6,7 @@
         UnknownCommand,
         InvalidArguments,
         InternalError,
+        PermissionDenied,
         Unknown,
     }
 
