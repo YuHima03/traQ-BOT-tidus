@@ -65,9 +65,13 @@ namespace BotTidus
                         }
                         conf.BotName = botName;
 
-                        if (Guid.TryParse(ctx.Configuration["BOT_USER_ID"], out var userId))
+                        if (Guid.TryParse(ctx.Configuration["ADMIN_USER_ID"], out var adminUserId))
                         {
-                            conf.BotUserId = userId;
+                            conf.AdminUserId = adminUserId;
+                        }
+                        if (Guid.TryParse(ctx.Configuration["BOT_USER_ID"], out var botUserId))
+                        {
+                            conf.BotUserId = botUserId;
                         }
 
                         conf.BotCommandPrefix = ctx.Configuration["BOT_COMMAND_PREFIX"] ?? (ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//");

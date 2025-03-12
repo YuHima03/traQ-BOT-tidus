@@ -4,6 +4,8 @@ namespace BotTidus
 {
     class AppConfig
     {
+        public Guid AdminUserId { get; set; }
+
         [NotNull]
         public string? BotCommandPrefix { get; set; }
 
