@@ -72,7 +72,7 @@ namespace BotTidus
                         conf.BotCommandPrefix = ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//";
                     });
 
-                    services.AddHostedService<FaceCollectingService>(p => new(p));
+                    services.AddHostedService<FaceCollectingService>();
                     services.AddHostedService<Services.InteractiveBotService>();
                 })
                 .Build();
