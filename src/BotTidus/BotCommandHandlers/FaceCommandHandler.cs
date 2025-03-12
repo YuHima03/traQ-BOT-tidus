@@ -16,6 +16,7 @@ namespace BotTidus.BotCommandHandlers
         BotEventUser _sender = sender;
         ITraqApiClient _traq = traq;
 
+        bool _help = false;
         string? _messageIdOrUri;
         SubCommands? _subCommand;
         string? _username;
@@ -26,7 +27,45 @@ namespace BotTidus.BotCommandHandlers
         {
             IMessageFaceScoresRepository repo = await _repoFactory.CreateRepositoryAsync(cancellationToken);
 
-            if (_subCommand is null)
+            if (_help)
+            {
+                return new()
+                {
+                    IsSuccessful = true,
+                    Message = """
+                        ```plain
+                        Usage[0]: /face {-h|--help}
+
+                            Displays this help message.
+
+                        Usage[0]: /face cancel <MESSAGE>
+
+                            Cancels the face count of the specified message.
+                            This command requires permission.
+
+                        Arguments:
+                            <MESSAGE>  The id or uri of the message to cancel the face count of.
+
+                        Usage[1]: /face count [{-u|--user} <USER>]
+
+                            Displays the face count of the specified user.
+                            If no user is specified, the face count of the sender is displayed.
+
+                        Arguments:
+                            <USER>  The name of the user to display the face count of.
+
+                        Usage[2]: /face rank [OPTIONS]
+
+                            Displays the face ranking of all users.
+
+                        Options:
+                            -b, --include-bots  Includes bots in the ranking.
+                            -i, --inverse       Displays the ranking in reverse order.
+                        ```
+                        """
+                };
+            }
+            else if (_subCommand is null)
             {
                 return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments };
             }
@@ -152,6 +191,16 @@ namespace BotTidus.BotCommandHandlers
 
         public bool TryReadArguments(ConsoleCommandReader reader)
         {
+            if (reader.NextArgumentNameOnly(out var argName))
+            {
+                if (argName is "-h" or "--help")
+                {
+                    _help = true;
+                    return reader.EnumeratedAll;
+                }
+                return false;
+            }
+
             if (!reader.NextValueOnly(out var subcommand))
             {
                 return false;
