@@ -159,6 +159,7 @@ namespace BotTidus.BotCommandHandlers
         public CommandErrorType ErrorType { get; init; }
         public bool IsSuccessful { get; init; }
         public string? Message { get; init; }
+        public Guid? ReactionStampId { get; init; }
 
         public override string? ToString() => Message;
     }

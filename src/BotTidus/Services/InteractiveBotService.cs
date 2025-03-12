@@ -61,9 +61,16 @@ namespace BotTidus.Services
                     if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(message.Author, _repoFactory, _traq), ref reader, out var resultTask, ct))
                     {
                         var result = await resultTask;
-                        if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
+                        if (result.IsSuccessful)
                         {
-                            await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
+                            if (!string.IsNullOrWhiteSpace(result.Message))
+                            {
+                                await _traq.MessageApi.PostMessageAsync(message.ChannelId, new Traq.Model.PostMessageRequest(result.Message, false), ct);
+                            }
+                            else if (result.ReactionStampId is not null)
+                            {
+                                await _traq.MessageApi.AddMessageStampAsync(message.Id, result.ReactionStampId.Value, new Traq.Model.PostMessageStampRequest(1), ct);
+                            }
                             return true;
                         }
                     }
