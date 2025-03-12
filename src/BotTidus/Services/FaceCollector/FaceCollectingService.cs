@@ -1,6 +1,6 @@
 ﻿using Traq.Model;
 
-namespace BotTidus.Services
+namespace BotTidus.Services.FaceCollector
 {
     internal sealed class FaceCollectingService(IServiceProvider services) : RecentMessageCollectingService(services, TimeSpan.FromSeconds(30))
     {
