@@ -43,6 +43,11 @@ namespace BotTidus
                         }
                     });
 
+                    services.AddMemoryCache(o =>
+                    {
+                        o.ExpirationScanFrequency = TimeSpan.FromSeconds(30);
+                    });
+
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
                     {
                         ob.UseMySQL(GetConnectionString(ctx));
