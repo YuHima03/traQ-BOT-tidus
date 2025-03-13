@@ -127,6 +127,12 @@ namespace BotTidus.Services.FaceCollector
                         result = -1;
                         goto returnResult;
                     }
+                    else if (sliced is "阿修羅")
+                    {
+                        charsUsed += 3;
+                        result = 3;
+                        goto returnResult;
+                    }
                     else if (sliced is "七面鳥")
                     {
                         charsUsed += 3;
