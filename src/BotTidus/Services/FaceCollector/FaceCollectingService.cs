@@ -30,9 +30,9 @@ namespace BotTidus.Services.FaceCollector
                     new Domain.MessageFaceScores.MessageFaceScore(
                         m.Id,
                         m.UserId,
-                        positiveCnt,
-                        0,
                         negativeCnt,
+                        0,
+                        positiveCnt,
                         0),
                     ct);
 

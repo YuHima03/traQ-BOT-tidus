@@ -76,9 +76,10 @@ namespace BotTidus.ConsoleCommand
         public bool NextArgumentNameOnly(out ReadOnlySpan<char> name)
         {
             var index = _index;
-            var charsUsed = tryGetName(_rawArguments[index..], out name);
+            var raw = _rawArguments[index..].TrimStart(out var leadingSpaces);
+            var charsUsed = tryGetName(raw, out name);
 
-            _index = index + charsUsed;
+            _index = index + leadingSpaces + charsUsed;
             return charsUsed != 0;
 
             static int tryGetName(ReadOnlySpan<char> s, out ReadOnlySpan<char> name)
@@ -106,23 +107,27 @@ namespace BotTidus.ConsoleCommand
                 }
 
                 name = s;
-                return s.Length;
+                return leadingSpaces + s.Length;
             }
         }
 
         public bool NextNamedArgument(out ConsoleCommandNamedArgument value)
         {
-            var index = _index;
+            var lastIndex = _index;
 
             if (NextArgumentNameOnly(out var name))
             {
-                var c0 = _index - index;
-                if (NextValueOnly(out var valExp))
+                var charsUsed = _index - lastIndex;
+                if (NextArgumentNameOnly(out _))
+                {
+                    charsUsed = _index - lastIndex;
+                }
+                else if (NextValueOnly(out var valExp))
                 {
                     value = new() { Name = name, Value = valExp };
                     return true;
                 }
-                _index -= c0;
+                _index -= charsUsed;
             }
             value = default;
             return false;
@@ -284,14 +289,14 @@ namespace BotTidus.ConsoleCommand
                 argument = ConsoleCommandArgument.Create(namedArg.Name, namedArg.Value);
                 return true;
             }
-            else if (NextValueOnly(out var value))
-            {
-                argument = ConsoleCommandArgument.CreateValueOnly(value);
-                return true;
-            }
             else if (NextArgumentNameOnly(out var name))
             {
                 argument = ConsoleCommandArgument.CreateNameOnly(name);
+                return true;
+            }
+            else if (NextValueOnly(out var value))
+            {
+                argument = ConsoleCommandArgument.CreateValueOnly(value);
                 return true;
             }
             else

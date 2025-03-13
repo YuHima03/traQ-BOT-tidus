@@ -18,7 +18,6 @@ namespace BotTidus
             var host = Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((ctx, conf) =>
                 {
-
                     var envFiles = ctx.Configuration["env-files"]?.Split(';') ?? [];
                     foreach (var envFile in envFiles)
                     {
@@ -41,6 +40,11 @@ namespace BotTidus
                         {
                             b.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", l => LogLevel.Warning <= l);
                         }
+                    });
+
+                    services.AddMemoryCache(o =>
+                    {
+                        o.ExpirationScanFrequency = TimeSpan.FromSeconds(30);
                     });
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
