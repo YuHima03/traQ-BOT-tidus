@@ -18,7 +18,6 @@ namespace BotTidus
             var host = Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((ctx, conf) =>
                 {
-
                     var envFiles = ctx.Configuration["env-files"]?.Split(';') ?? [];
                     foreach (var envFile in envFiles)
                     {
