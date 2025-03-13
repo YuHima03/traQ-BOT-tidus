@@ -131,7 +131,7 @@ namespace BotTidus.ConsoleCommand
         public bool NextValueOnly(out ReadOnlySpan<char> value)
         {
             var index = _index;
-            var raw = _rawArguments.TrimStart(out var leadingSpaces);
+            var raw = _rawArguments[index..].TrimStart(out var leadingSpaces);
             var charsUsed = tryGetValue(raw, out value);
 
             _index = index + leadingSpaces + charsUsed;
