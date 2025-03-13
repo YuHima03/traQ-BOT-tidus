@@ -131,10 +131,10 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                 username = embedding.DisplayText.StartsWith("@") ? embedding.DisplayText[1..].ToString() : embedding.DisplayText.ToString();
                                 userId = embedding.EmbeddedId;
                             }
-                            else if (await _traq.UserApi.TryGetUserIdFromNameAsync(_username, out var userTask, cancellationToken))
+                            else if (await _traq.UserApi.TryGetCachedUserIdAsync(_username, _cache, out var userTask, cancellationToken))
                             {
                                 username = _username;
-                                userId = (await userTask).Id;
+                                userId = await userTask;
                             }
                             else
                             {
@@ -195,7 +195,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                         if (!_rank_includeBots)
                         {
                             var traq = _traq;
-                            filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => !(await traq.UserApi.GetCachedUserAsync(x.UserId, cache, ct)).Bot);
+                            filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => !(await traq.UserApi.GetCachedUserAbstractAsync(x.UserId, cache, ct)).IsBot);
                         }
                         if (!_rank_all)
                         {
@@ -205,11 +205,14 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
 
                         int rank = 1;
                         int prevCount = int.MinValue;
-                        await foreach (var current in filteredFaceCounts)
+
+                        await using var en = filteredFaceCounts.GetAsyncEnumerator(cancellationToken);
+                        while (await en.MoveNextAsync(cancellationToken))
                         {
-                            var user = await _traq.UserApi.GetCachedUserAsync(current.UserId, cache, cancellationToken);
+                            var current = en.Current;
+                            var username = await _traq.UserApi.GetCachedUserNameAsync(current.UserId, cache, cancellationToken);
                             var count = current.TotalScore;
-                            sb.AppendLine($"| {(count == prevCount ? "-" : rank)} | :@{user.Name}: {user.Name} | {count} |");
+                            sb.AppendLine($"| {(count == prevCount ? "-" : rank)} | :@{username}: {username} | {count} |");
                             prevCount = count;
                             rank++;
                         }
