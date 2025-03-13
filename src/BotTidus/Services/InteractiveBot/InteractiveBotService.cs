@@ -4,6 +4,7 @@ using BotTidus.Services.InteractiveBot.CommandHandlers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Diagnostics;
 using Traq;
 using Traq.Bot.Models;
 
@@ -31,8 +32,12 @@ namespace BotTidus.Services.InteractiveBot
         {
             _logger.LogDebug("Received message: {Message}", args.Message.Text);
 
+            var stopwatch = Stopwatch.StartNew();
+
             if (await TryHandleAsCommandAsync(args.Message, ct))
             {
+                stopwatch.Stop();
+                _logger.LogInformation("Executed command [{ElapsedMilliseconds}ms]: {Command}", stopwatch.ElapsedMilliseconds, args.Message.Text);
                 return;
             }
         }
@@ -129,7 +134,7 @@ namespace BotTidus.Services.InteractiveBot
                     }
                 case CommandErrorType.PermissionDenied:
                     {
-                        _logger.LogDebug("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
+                        _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
                         await _traq.MessageApi.AddMessageStampAsync(message.Id, StampId_PermissionDenied, new Traq.Model.PostMessageStampRequest(1), ct);
                         break;
                     }
