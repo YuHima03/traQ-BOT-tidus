@@ -1,6 +1,7 @@
 ﻿using BotTidus.ConsoleCommand;
 using BotTidus.Domain;
 using BotTidus.Services.InteractiveBot.CommandHandlers;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Traq;
@@ -8,9 +9,10 @@ using Traq.Bot.Models;
 
 namespace BotTidus.Services.InteractiveBot
 {
-    sealed class InteractiveBotService(IOptions<AppConfig> appConf, ILogger<InteractiveBotService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, IServiceProvider provider) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
+    sealed class InteractiveBotService(IOptions<AppConfig> appConf, IMemoryCache cache, ILogger<InteractiveBotService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, IServiceProvider provider) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
     {
         readonly AppConfig _appConf = appConf.Value;
+        readonly IMemoryCache _cache = cache;
         readonly ILogger<InteractiveBotService> _logger = logger;
         readonly IRepositoryFactory _repoFactory = repoFactory;
         readonly ITraqApiClient _traq = traq;
@@ -58,7 +60,7 @@ namespace BotTidus.Services.InteractiveBot
             {
                 case "face":
                     {
-                        if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_appConf, message.Author, _repoFactory, _traq), ref reader, out var resultTask, ct))
+                        if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_appConf, _cache, message.Author, _repoFactory, _traq), ref reader, out var resultTask, ct))
                         {
                             var result = await resultTask;
                             if (result.IsSuccessful)
