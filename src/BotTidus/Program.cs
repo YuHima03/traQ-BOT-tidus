@@ -1,5 +1,6 @@
 ﻿using BotTidus.Domain;
 using BotTidus.Services.FaceCollector;
+using BotTidus.Services.FaceReactionCollector;
 using BotTidus.Services.InteractiveBot;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -92,6 +93,7 @@ namespace BotTidus
                     });
 
                     services.AddHostedService<FaceCollectingService>();
+                    services.AddHostedService<FaceReactionCollectingService>();
                     services.AddHostedService<InteractiveBotService>();
                 })
                 .Build();
