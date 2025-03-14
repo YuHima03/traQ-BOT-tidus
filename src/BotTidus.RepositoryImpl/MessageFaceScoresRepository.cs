@@ -31,7 +31,13 @@ namespace BotTidus.RepositoryImpl
             return;
         }
 
-        ValueTask<MessageFaceScore> IMessageFaceScoresRepository.GetMessageFaceScoreAsync(Guid id, CancellationToken ct)
+        async ValueTask<MessageFaceScore> IMessageFaceScoresRepository.GetMessageFaceScoreAsync(Guid id, CancellationToken ct)
+        {
+            return await MessageFaceScores
+                .Where(r => r.MessageId == id)
+                .Select(r => new MessageFaceScore(r.MessageId, r.UserId, r.NegativePhraseCount, r.NegativeReactionCount, r.PositivePhraseCount, r.PositiveReactionCount))
+                .SingleAsync(ct);
+        }
         {
             throw new NotImplementedException();
         }
