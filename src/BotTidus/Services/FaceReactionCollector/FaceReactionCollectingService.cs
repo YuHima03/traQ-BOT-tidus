@@ -23,9 +23,18 @@ namespace BotTidus.Services.FaceReactionCollector
             while (await timer.WaitForNextTickAsync(stoppingToken))
             {
                 var now = DateTimeOffset.UtcNow;
-                var messages = await _traq.MessageApi.SearchMessagesAsync(after: now - TimeSpan.FromMinutes(15), limit: 100, cancellationToken: stoppingToken);
-                var repo = await _repoFactory.CreateRepositoryAsync(stoppingToken);
+                MessageSearchResult messages;
+                try
+                {
+                    messages= await _traq.MessageApi.SearchMessagesAsync(after: now - TimeSpan.FromMinutes(15), limit: 100, cancellationToken: stoppingToken);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to fetch messages.");
+                    continue;
+                }
 
+                var repo = await _repoFactory.CreateRepositoryAsync(stoppingToken);
                 _logger.LogDebug("Collected {Count} messages.", messages.Hits.Count);
 
                 foreach (var m in messages.Hits)
