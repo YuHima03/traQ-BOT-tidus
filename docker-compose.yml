@@ -4,6 +4,8 @@ services:
     build:
       context: ./
       dockerfile: ./src/BotTidus/Dockerfile
+    environment:
+      ON_DOCKER: "true"
     env_file:
       - ./.env
       - ./src/BotTidus/.env
