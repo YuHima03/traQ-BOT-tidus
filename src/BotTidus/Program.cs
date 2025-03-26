@@ -2,6 +2,7 @@
 using BotTidus.Services.FaceCollector;
 using BotTidus.Services.FaceReactionCollector;
 using BotTidus.Services.InteractiveBot;
+using BotTidus.Services.StampRanking;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -88,6 +89,10 @@ namespace BotTidus
                         {
                             conf.BotUserId = botUserId;
                         }
+                        if (Guid.TryParse(ctx.Configuration["STAMP_RANKING_CHANNEL_ID"], out var stampRankingChannelId))
+                        {
+                            conf.StampRankingChannelId = stampRankingChannelId;
+                        }
 
                         conf.BotCommandPrefix = ctx.Configuration["BOT_COMMAND_PREFIX"] ?? (ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//");
                     });
@@ -95,6 +100,7 @@ namespace BotTidus
                     services.AddHostedService<FaceCollectingService>();
                     services.AddHostedService<FaceReactionCollectingService>();
                     services.AddHostedService<InteractiveBotService>();
+                    services.AddHostedService<StampRankingService>();
                 })
                 .Build();
 
