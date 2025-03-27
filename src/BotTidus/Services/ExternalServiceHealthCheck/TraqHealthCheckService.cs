@@ -33,11 +33,21 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
             {
                 publisher.LastCheckedAt = DateTimeOffset.UtcNow;
 
-                var pingResult = await ping.SendPingAsync(traqHostName, TimeSpan.FromSeconds(5), cancellationToken: stoppingToken);
-                if (pingResult.Status is IPStatus.TimedOut or IPStatus.DestinationHostUnreachable)
+                try
                 {
-                    publisher.CurrentStatus = TraqStatus.Unavailable;
-                    continue;
+                    var pingResult = await ping.SendPingAsync(traqHostName, TimeSpan.FromSeconds(5), cancellationToken: stoppingToken);
+                    if (pingResult.Status is IPStatus.TimedOut or IPStatus.DestinationHostUnreachable)
+                    {
+                        publisher.CurrentStatus = TraqStatus.Unavailable;
+                        continue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (ex is not PlatformNotSupportedException)
+                    {
+                        logger.LogError(ex, "Failed to ping the traQ service.");
+                    }
                 }
 
                 try
