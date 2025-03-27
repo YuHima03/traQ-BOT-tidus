@@ -1,4 +1,5 @@
 ﻿using BotTidus.Domain;
+using BotTidus.Services.ExternalServiceHealthCheck;
 using BotTidus.Services.FaceCollector;
 using BotTidus.Services.FaceReactionCollector;
 using BotTidus.Services.HealthCheck;
@@ -53,7 +54,9 @@ namespace BotTidus
                     services.AddHealthChecks()
                         .AddTypedHostedService<FaceCollectingService>()
                         .AddTypedHostedService<FaceReactionCollectingService>()
-                        .AddTypedHostedService<StampRankingService>();
+                        .AddTypedHostedService<StampRankingService>()
+                        .AddTypedHostedService<TraqHealthCheckService>();
+                    services.AddSingleton<TraqHealthCheckPublisher>();
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
                     {
@@ -107,6 +110,7 @@ namespace BotTidus
                     services.AddHostedService<FaceReactionCollectingService>();
                     services.AddHostedService<InteractiveBotService>();
                     services.AddHostedService<StampRankingService>();
+                    services.AddHostedService<TraqHealthCheckService>();
                 })
                 .Build();
 

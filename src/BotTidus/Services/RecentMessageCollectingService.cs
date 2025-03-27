@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using BotTidus.Helpers;
+using BotTidus.Services.ExternalServiceHealthCheck;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -7,6 +9,7 @@ namespace BotTidus.Services
     internal abstract class RecentMessageCollectingService(IServiceProvider services, TimeSpan interval) : BackgroundService
     {
         readonly ILogger<RecentMessageCollectingService> _logger = services.GetRequiredService<ILogger<RecentMessageCollectingService>>();
+        readonly TraqHealthCheckPublisher _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
 
         protected Traq.ITraqApiClient Client { get; } = services.GetRequiredService<Traq.ITraqApiClient>();
 
@@ -21,6 +24,12 @@ namespace BotTidus.Services
 
             do
             {
+                if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
+                {
+                    _logger.LogWarning("The task is skipped because the traQ service is not available.");
+                    continue;
+                }
+
                 try
                 {
                     var timeline = await Client.ActivityApi.GetActivityTimelineAsync(limit: 50, all: true, cancellationToken: stoppingToken);
