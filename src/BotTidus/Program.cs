@@ -56,6 +56,7 @@ namespace BotTidus
                         .AddTypedHostedService<FaceReactionCollectingService>()
                         .AddTypedHostedService<StampRankingService>()
                         .AddTypedHostedService<TraqHealthCheckService>();
+                    services.AddSingleton<TraqHealthCheckPublisher>();
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
                     {

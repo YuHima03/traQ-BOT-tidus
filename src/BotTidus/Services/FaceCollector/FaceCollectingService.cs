@@ -1,19 +1,22 @@
 ﻿using BotTidus.Domain;
+using BotTidus.Helpers;
 using BotTidus.Services.ExternalServiceHealthCheck;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Traq.Model;
 
 namespace BotTidus.Services.FaceCollector
 {
-    internal sealed class FaceCollectingService(IOptions<AppConfig> appConf, IRepositoryFactory repoFactory, TraqHealthCheckService traqHealthCheck, IServiceProvider services) : RecentMessageCollectingService(services, TimeSpan.FromSeconds(30)), IHealthCheck
+    internal sealed class FaceCollectingService(IOptions<AppConfig> appConf, IRepositoryFactory repoFactory, IServiceProvider services) : RecentMessageCollectingService(services, TimeSpan.FromSeconds(30)), IHealthCheck
     {
         readonly AppConfig _appConf = appConf.Value;
         readonly IRepositoryFactory _repoFactory = repoFactory;
+        readonly TraqHealthCheckPublisher _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
 
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
-            if (traqHealthCheck.CurrentStatus != TraqStatus.Available)
+            if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
             {
                 return Task.FromResult(HealthCheckResult.Degraded("The traQ service is unavailable."));
             }

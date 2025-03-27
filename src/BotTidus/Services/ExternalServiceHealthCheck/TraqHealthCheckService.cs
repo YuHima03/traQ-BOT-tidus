@@ -9,18 +9,15 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
 {
     internal class TraqHealthCheckService(
         ILogger<TraqHealthCheckService> logger,
-        ITraqApiClient traq) : BackgroundService, IHealthCheck
+        ITraqApiClient traq,
+        TraqHealthCheckPublisher publisher) : BackgroundService, IHealthCheck
     {
         readonly Ping ping = new();
         readonly string traqHostName = new Uri(traq.Options.BaseAddress).Host;
 
-        public DateTimeOffset LastCheckedAt { get; private set; }
-
-        public TraqStatus CurrentStatus { get; private set; } = TraqStatus.Unknown;
-
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
-            return CurrentStatus switch
+            return publisher.CurrentStatus switch
             {
                 TraqStatus.Available => Task.FromResult(HealthCheckResult.Healthy()),
                 TraqStatus.PermissionDenied => Task.FromResult(HealthCheckResult.Degraded("The client does not have permission to access the traQ service.")),
@@ -34,19 +31,19 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
             using PeriodicTimer timer = new(TimeSpan.FromMinutes(1));
             do
             {
-                LastCheckedAt = DateTimeOffset.UtcNow;
+                publisher.LastCheckedAt = DateTimeOffset.UtcNow;
 
                 var pingResult = await ping.SendPingAsync(traqHostName, TimeSpan.FromSeconds(5), cancellationToken: stoppingToken);
                 if (pingResult.Status is IPStatus.TimedOut or IPStatus.DestinationHostUnreachable)
                 {
-                    CurrentStatus = TraqStatus.Unavailable;
+                    publisher.CurrentStatus = TraqStatus.Unavailable;
                     continue;
                 }
 
                 try
                 {
                     _ = await traq.MeApi.GetMeAsync(cancellationToken: stoppingToken);
-                    CurrentStatus = TraqStatus.Available;
+                    publisher.CurrentStatus = TraqStatus.Available;
                 }
                 catch (Exception ex)
                 {
@@ -56,22 +53,22 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
                         {
                             case (int)HttpStatusCode.Forbidden:
                             case (int)HttpStatusCode.Unauthorized:
-                                CurrentStatus = TraqStatus.PermissionDenied;
+                                publisher.CurrentStatus = TraqStatus.PermissionDenied;
                                 break;
 
                             case (int)HttpStatusCode.ServiceUnavailable:
-                                CurrentStatus = TraqStatus.Unavailable;
+                                publisher.CurrentStatus = TraqStatus.Unavailable;
                                 break;
 
                             default:
-                                CurrentStatus = TraqStatus.Unknown;
+                                publisher.CurrentStatus = TraqStatus.Unknown;
                                 logger.LogError(ex, "Unknown response from the traQ service.");
                                 break;
                         }
                     }
                     else
                     {
-                        CurrentStatus = TraqStatus.Unknown;
+                        publisher.CurrentStatus = TraqStatus.Unknown;
                         logger.LogError(ex, "Failed to check traQ health.");
                     }
                 }

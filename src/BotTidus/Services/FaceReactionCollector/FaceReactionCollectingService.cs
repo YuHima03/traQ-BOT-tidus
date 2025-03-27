@@ -2,6 +2,7 @@
 using BotTidus.Domain.MessageFaceScores;
 using BotTidus.Services.ExternalServiceHealthCheck;
 using BotTidus.Services.FaceCollector;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,16 +12,17 @@ using Traq.Model;
 
 namespace BotTidus.Services.FaceReactionCollector
 {
-    sealed class FaceReactionCollectingService(IOptions<AppConfig> appConfig, ILogger<FaceReactionCollectingService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, TraqHealthCheckService traqHealthCheck) : BackgroundService, IHealthCheck
+    sealed class FaceReactionCollectingService(IOptions<AppConfig> appConfig, ILogger<FaceReactionCollectingService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, IServiceProvider services) : BackgroundService, IHealthCheck
     {
         readonly AppConfig _appConfig = appConfig.Value;
         readonly ILogger<FaceReactionCollectingService> _logger = logger;
         readonly IRepositoryFactory _repoFactory = repoFactory;
         readonly ITraqApiClient _traq = traq;
+        readonly TraqHealthCheckPublisher _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
 
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
-            if (traqHealthCheck.CurrentStatus != TraqStatus.Available)
+            if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
             {
                 return Task.FromResult(HealthCheckResult.Degraded("The traQ service is unavailable."));
             }
@@ -33,7 +35,7 @@ namespace BotTidus.Services.FaceReactionCollector
 
             do
             {
-                if (traqHealthCheck.CurrentStatus != TraqStatus.Available)
+                if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
                 {
                     _logger.LogWarning("The task is skipped because the traQ service is not available.");
                     continue;

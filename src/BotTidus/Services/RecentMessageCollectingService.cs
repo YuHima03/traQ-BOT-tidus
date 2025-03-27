@@ -1,4 +1,5 @@
-﻿using BotTidus.Services.ExternalServiceHealthCheck;
+﻿using BotTidus.Helpers;
+using BotTidus.Services.ExternalServiceHealthCheck;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,7 +9,7 @@ namespace BotTidus.Services
     internal abstract class RecentMessageCollectingService(IServiceProvider services, TimeSpan interval) : BackgroundService
     {
         readonly ILogger<RecentMessageCollectingService> _logger = services.GetRequiredService<ILogger<RecentMessageCollectingService>>();
-        readonly TraqHealthCheckService _traqHealthCheck = services.GetRequiredService<TraqHealthCheckService>();
+        readonly TraqHealthCheckPublisher _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
 
         protected Traq.ITraqApiClient Client { get; } = services.GetRequiredService<Traq.ITraqApiClient>();
 
