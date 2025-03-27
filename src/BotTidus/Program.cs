@@ -1,6 +1,7 @@
 ﻿using BotTidus.Domain;
 using BotTidus.Services.FaceCollector;
 using BotTidus.Services.FaceReactionCollector;
+using BotTidus.Services.HealthCheck;
 using BotTidus.Services.InteractiveBot;
 using BotTidus.Services.StampRanking;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,11 @@ namespace BotTidus
                     {
                         o.ExpirationScanFrequency = TimeSpan.FromSeconds(30);
                     });
+
+                    services.AddHealthChecks()
+                        .AddTypedHostedService<FaceCollectingService>()
+                        .AddTypedHostedService<FaceReactionCollectingService>()
+                        .AddTypedHostedService<StampRankingService>();
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
                     {

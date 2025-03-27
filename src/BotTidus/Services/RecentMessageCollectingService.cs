@@ -19,21 +19,29 @@ namespace BotTidus.Services
 
             _logger.LogDebug("Started collecting messages.");
 
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            do
             {
-                var timeline = await Client.ActivityApi.GetActivityTimelineAsync(limit: 50, all: true, cancellationToken: stoppingToken);
-                var messages = timeline.TakeWhile(m => m.CreatedAt > lastCollectedAt).ToArray();
-
-                _logger.LogDebug("Collected {Count} messages.", messages.Length);
-
-                if (messages.Length != 0)
+                try
                 {
-                    lastCollectedAt = messages[0].CreatedAt;
-                    await OnCollectAsync(messages, stoppingToken);
-                }
+                    var timeline = await Client.ActivityApi.GetActivityTimelineAsync(limit: 50, all: true, cancellationToken: stoppingToken);
+                    var messages = timeline.TakeWhile(m => m.CreatedAt > lastCollectedAt).ToArray();
 
-                timeline.Clear();
+                    _logger.LogDebug("Collected {Count} messages.", messages.Length);
+
+                    if (messages.Length != 0)
+                    {
+                        lastCollectedAt = messages[0].CreatedAt;
+                        await OnCollectAsync(messages, stoppingToken);
+                    }
+
+                    timeline.Clear();
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to collect messages.");
+                }
             }
+            while (await timer.WaitForNextTickAsync(stoppingToken));
         }
 
         protected abstract ValueTask OnCollectAsync(Traq.Model.ActivityTimelineMessage[] messages, CancellationToken ct);
