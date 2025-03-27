@@ -20,13 +20,13 @@ namespace BotTidus.Services.FaceReactionCollector
         {
             using PeriodicTimer timer = new(TimeSpan.FromMinutes(1));
 
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            do
             {
                 var now = DateTimeOffset.UtcNow;
                 MessageSearchResult messages;
                 try
                 {
-                    messages= await _traq.MessageApi.SearchMessagesAsync(after: now - TimeSpan.FromMinutes(15), limit: 100, cancellationToken: stoppingToken);
+                    messages = await _traq.MessageApi.SearchMessagesAsync(after: now - TimeSpan.FromMinutes(15), limit: 100, cancellationToken: stoppingToken);
                 }
                 catch (Exception e)
                 {
@@ -81,6 +81,7 @@ namespace BotTidus.Services.FaceReactionCollector
                     }
                 }
             }
+            while (await timer.WaitForNextTickAsync(stoppingToken));
         }
     }
 }

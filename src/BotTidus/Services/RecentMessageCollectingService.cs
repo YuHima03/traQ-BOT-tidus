@@ -19,7 +19,7 @@ namespace BotTidus.Services
 
             _logger.LogDebug("Started collecting messages.");
 
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            do
             {
                 var timeline = await Client.ActivityApi.GetActivityTimelineAsync(limit: 50, all: true, cancellationToken: stoppingToken);
                 var messages = timeline.TakeWhile(m => m.CreatedAt > lastCollectedAt).ToArray();
@@ -34,6 +34,7 @@ namespace BotTidus.Services
 
                 timeline.Clear();
             }
+            while (await timer.WaitForNextTickAsync(stoppingToken));
         }
 
         protected abstract ValueTask OnCollectAsync(Traq.Model.ActivityTimelineMessage[] messages, CancellationToken ct);

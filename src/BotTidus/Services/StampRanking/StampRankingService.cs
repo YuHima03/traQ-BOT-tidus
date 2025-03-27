@@ -38,7 +38,7 @@ namespace BotTidus.Services.StampRanking
             await Task.Delay(_delay, stoppingToken);
 
             using PeriodicTimer timer = new(TimeSpan.FromDays(1));
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            do
             {
                 var jstYesterday = JstToday.AddDays(-1);
 
@@ -81,6 +81,7 @@ namespace BotTidus.Services.StampRanking
 
                 await _traq.MessageApi.PostMessageAsync(_postChannelId, new(sb.ToString(), false), stoppingToken);
             }
+            while (await timer.WaitForNextTickAsync(stoppingToken));
         }
 
         async ValueTask<IEnumerable<KeyValuePair<Guid, int>>> CollectMessageStampsAsync(DateTimeOffset since, DateTimeOffset until, CancellationToken ct)
