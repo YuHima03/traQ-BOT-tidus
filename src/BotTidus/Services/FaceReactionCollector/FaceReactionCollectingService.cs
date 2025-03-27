@@ -1,6 +1,7 @@
 ﻿using BotTidus.Domain;
 using BotTidus.Domain.MessageFaceScores;
 using BotTidus.Services.FaceCollector;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -9,12 +10,17 @@ using Traq.Model;
 
 namespace BotTidus.Services.FaceReactionCollector
 {
-    sealed class FaceReactionCollectingService(IOptions<AppConfig> appConfig, ILogger<FaceReactionCollectingService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq) : BackgroundService
+    sealed class FaceReactionCollectingService(IOptions<AppConfig> appConfig, ILogger<FaceReactionCollectingService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq) : BackgroundService, IHealthCheck
     {
         readonly AppConfig _appConfig = appConfig.Value;
         readonly ILogger<FaceReactionCollectingService> _logger = logger;
         readonly IRepositoryFactory _repoFactory = repoFactory;
         readonly ITraqApiClient _traq = traq;
+
+        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(HealthCheckResult.Healthy());
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -37,9 +43,9 @@ namespace BotTidus.Services.FaceReactionCollector
                 var repo = await _repoFactory.CreateRepositoryAsync(stoppingToken);
                 _logger.LogDebug("Collected {Count} messages.", messages.Hits.Count);
 
-                foreach (var m in messages.Hits)
+                try
                 {
-                    try
+                    foreach (var m in messages.Hits)
                     {
                         if (m.UserId == _appConfig.BotUserId)
                         {
@@ -61,24 +67,32 @@ namespace BotTidus.Services.FaceReactionCollector
                             stamps[MessageFaceCounter.PositiveReactionGuid].Count() >= 5 ? 1U : 0
                             );
 
-                        if (score.NegativeReactionCount == 0 && score.PositiveReactionCount == 0)
+                        try
                         {
-                            continue;
+                            if (score.NegativeReactionCount == 0 && score.PositiveReactionCount == 0)
+                            {
+                                continue;
+                            }
+                            if (score.NegativeReactionCount != 0)
+                            {
+                                await _traq.StampApi.AddMessageStampAsync(m.Id, MessageFaceCounter.NegativeReactionGuid, new PostMessageStampRequest(1), stoppingToken);
+                            }
+                            if (score.PositiveReactionCount != 0)
+                            {
+                                await _traq.StampApi.AddMessageStampAsync(m.Id, MessageFaceCounter.PositiveReactionGuid, new PostMessageStampRequest(1), stoppingToken);
+                            }
                         }
-                        if (score.NegativeReactionCount != 0)
+                        catch (Exception ex)
                         {
-                            await _traq.StampApi.AddMessageStampAsync(m.Id, MessageFaceCounter.NegativeReactionGuid, new PostMessageStampRequest(1), stoppingToken);
-                        }
-                        if (score.PositiveReactionCount != 0)
-                        {
-                            await _traq.StampApi.AddMessageStampAsync(m.Id, MessageFaceCounter.PositiveReactionGuid, new PostMessageStampRequest(1), stoppingToken);
+                            _logger.LogError(ex, "Failed to process message stamps: {MessageId}.", m.Id);
+                            // Continue because it is not a critical error. (e.g. the message is deleted)
                         }
                         await repo.AddMessageFaceScoreAsync(score, stoppingToken);
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to process message stamps: {MessageId}.", m.Id);
-                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to process messages.");
                 }
             }
             while (await timer.WaitForNextTickAsync(stoppingToken));

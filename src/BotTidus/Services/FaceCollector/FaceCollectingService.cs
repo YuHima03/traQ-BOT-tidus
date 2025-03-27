@@ -1,13 +1,19 @@
 ﻿using BotTidus.Domain;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Traq.Model;
 
 namespace BotTidus.Services.FaceCollector
 {
-    internal sealed class FaceCollectingService(IOptions<AppConfig> appConf, IRepositoryFactory repoFactory, IServiceProvider services) : RecentMessageCollectingService(services, TimeSpan.FromSeconds(30))
+    internal sealed class FaceCollectingService(IOptions<AppConfig> appConf, IRepositoryFactory repoFactory, IServiceProvider services) : RecentMessageCollectingService(services, TimeSpan.FromSeconds(30)), IHealthCheck
     {
         readonly AppConfig _appConf = appConf.Value;
         readonly IRepositoryFactory _repoFactory = repoFactory;
+
+        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(HealthCheckResult.Healthy());
+        }
 
         protected override async ValueTask OnCollectAsync(ActivityTimelineMessage[] messages, CancellationToken ct)
         {
