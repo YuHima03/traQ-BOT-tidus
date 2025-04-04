@@ -30,6 +30,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
         string? _username;
 
         bool _rank_all = false;
+        bool _rank_includeDeactivatedUsers = false;
         bool _rank_includeBots = false;
         bool _rank_inverse = false;
         int? _rank_take = null;
@@ -74,8 +75,9 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             Displays the face ranking of all users.
 
                         Options:
-                            -b, --include-bots  Includes bots in the ranking.
-                            -i, --inv           Displays the ranking in reverse order.
+                            -b, --include-bots               Includes bots in the ranking.
+                            -d, --include-deactivated-users  Includes deactivated users in the ranking.
+                            -i, --inv                        Displays the ranking in reverse order.
                         ```
                         """
                 };
@@ -197,6 +199,11 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             var traq = _traq;
                             filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => !(await traq.UserApi.GetCachedUserAbstractAsync(x.UserId, cache, ct)).IsBot);
                         }
+                        if (!_rank_includeDeactivatedUsers)
+                        {
+                            var traq = _traq;
+                            filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => (await traq.UserApi.GetCachedUserAsync(x.UserId, cache, ct)).State != Traq.Model.UserAccountState.deactivated);
+                        }
                         if (!_rank_all)
                         {
                             var takeCount = _rank_take ?? RankTakeDefault;
@@ -317,6 +324,11 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             case "-b":
                             case "--include-bots":
                                 _rank_includeBots = true;
+                                break;
+
+                            case "-d":
+                            case "--include-deactivated-users":
+                                _rank_includeDeactivatedUsers = true;
                                 break;
 
                             case "-i":
