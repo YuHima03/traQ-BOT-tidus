@@ -63,7 +63,7 @@ namespace BotTidus.Services.StampRanking
                     var top100Stamps = stampCount.OrderByDescending(kv => kv.Value).Take(50);
 
                     StringBuilder sb = new($"""
-                    ## {jstYesterdayStart:M/dd} Stamp Ranking 50
+                    ## {jstYesterdayStart:M/d} Stamp Ranking 50
                     | rank | stamp | count |
                     |-----:|:------|------:|
                     """);
