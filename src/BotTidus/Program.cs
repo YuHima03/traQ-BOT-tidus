@@ -5,6 +5,7 @@ using BotTidus.Services.FaceReactionCollector;
 using BotTidus.Services.HealthCheck;
 using BotTidus.Services.InteractiveBot;
 using BotTidus.Services.StampRanking;
+using BotTidus.Services.WakaruMessageRanking;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,7 +56,8 @@ namespace BotTidus
                         .AddTypedHostedService<FaceCollectingService>()
                         .AddTypedHostedService<FaceReactionCollectingService>()
                         .AddTypedHostedService<StampRankingService>()
-                        .AddTypedHostedService<TraqHealthCheckService>();
+                        .AddTypedHostedService<TraqHealthCheckService>()
+                        .AddTypedHostedService<WakaruMessageRankingService>();
                     services.AddSingleton<TraqHealthCheckPublisher>();
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
@@ -115,6 +117,7 @@ namespace BotTidus
                     services.AddHostedService<InteractiveBotService>();
                     services.AddHostedService<StampRankingService>();
                     services.AddHostedService<TraqHealthCheckService>();
+                    services.AddHostedService<WakaruMessageRankingService>();
                 })
                 .Build();
 
