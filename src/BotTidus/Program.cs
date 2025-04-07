@@ -102,6 +102,10 @@ namespace BotTidus
                         {
                             conf.StampRankingChannelId = stampRankingChannelId;
                         }
+                        if (Guid.TryParse(ctx.Configuration["WAKARU_MESSAGE_RANKING_CHANNEL_ID"], out var wakaruMessageRankingChannelId))
+                        {
+                            conf.WakaruMessageRankingChannelId = wakaruMessageRankingChannelId;
+                        }
 
                         conf.BotCommandPrefix = ctx.Configuration["BOT_COMMAND_PREFIX"] ?? (ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//");
                     });
