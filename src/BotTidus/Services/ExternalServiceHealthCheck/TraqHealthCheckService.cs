@@ -12,9 +12,6 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
         ITraqApiClient traq,
         TraqHealthCheckPublisher publisher) : BackgroundService, IHealthCheck
     {
-        readonly Ping ping = new();
-        readonly string traqHostName = new Uri(traq.Options.BaseAddress).Host;
-
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
             return publisher.CurrentStatus switch
