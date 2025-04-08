@@ -13,7 +13,7 @@ namespace BotTidus.Services
         readonly IMemoryCache _cache;
         readonly ILogger<DailyMessageCollectingService> _logger;
         readonly TimeSpan _startDelay;
-        readonly TraqApiClient _traq;
+        readonly ITraqApiClient _traq;
         readonly TraqHealthCheckPublisher _traqHealthCheck;
 
         static DateTimeOffset JstToday => DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(9)).Date; // 00:00:00.0000000+09:00
@@ -27,7 +27,7 @@ namespace BotTidus.Services
             _cache = services.GetRequiredService<IMemoryCache>();
             _logger = services.GetRequiredService<ILogger<DailyMessageCollectingService>>();
             _startDelay = startDelay;
-            _traq = services.GetRequiredService<TraqApiClient>();
+            _traq = services.GetRequiredService<ITraqApiClient>();
             _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
         }
 
