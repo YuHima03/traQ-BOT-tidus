@@ -5,6 +5,7 @@ using BotTidus.Services.FaceReactionCollector;
 using BotTidus.Services.HealthCheck;
 using BotTidus.Services.InteractiveBot;
 using BotTidus.Services.StampRanking;
+using BotTidus.Services.WakaruMessageRanking;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,7 +56,8 @@ namespace BotTidus
                         .AddTypedHostedService<FaceCollectingService>()
                         .AddTypedHostedService<FaceReactionCollectingService>()
                         .AddTypedHostedService<StampRankingService>()
-                        .AddTypedHostedService<TraqHealthCheckService>();
+                        .AddTypedHostedService<TraqHealthCheckService>()
+                        .AddTypedHostedService<WakaruMessageRankingService>();
                     services.AddSingleton<TraqHealthCheckPublisher>();
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
@@ -102,6 +104,10 @@ namespace BotTidus
                         {
                             conf.StampRankingChannelId = stampRankingChannelId;
                         }
+                        if (Guid.TryParse(ctx.Configuration["WAKARU_MESSAGE_RANKING_CHANNEL_ID"], out var wakaruMessageRankingChannelId))
+                        {
+                            conf.WakaruMessageRankingChannelId = wakaruMessageRankingChannelId;
+                        }
 
                         conf.BotCommandPrefix = ctx.Configuration["BOT_COMMAND_PREFIX"] ?? (ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//");
                     });
@@ -111,6 +117,7 @@ namespace BotTidus
                     services.AddHostedService<InteractiveBotService>();
                     services.AddHostedService<StampRankingService>();
                     services.AddHostedService<TraqHealthCheckService>();
+                    services.AddHostedService<WakaruMessageRankingService>();
                 })
                 .Build();
 

@@ -12,9 +12,6 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
         ITraqApiClient traq,
         TraqHealthCheckPublisher publisher) : BackgroundService, IHealthCheck
     {
-        readonly Ping ping = new();
-        readonly string traqHostName = new Uri(traq.Options.BaseAddress).Host;
-
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
             return publisher.CurrentStatus switch
@@ -32,24 +29,6 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
             do
             {
                 publisher.LastCheckedAt = DateTimeOffset.UtcNow;
-
-                try
-                {
-                    var pingResult = await ping.SendPingAsync(traqHostName, TimeSpan.FromSeconds(5), cancellationToken: stoppingToken);
-                    if (pingResult.Status is IPStatus.TimedOut or IPStatus.DestinationHostUnreachable)
-                    {
-                        publisher.CurrentStatus = TraqStatus.Unavailable;
-                        continue;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (ex is not PlatformNotSupportedException)
-                    {
-                        logger.LogError(ex, "Failed to ping the traQ service.");
-                    }
-                }
-
                 try
                 {
                     _ = await traq.MeApi.GetMeAsync(cancellationToken: stoppingToken);

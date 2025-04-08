@@ -15,5 +15,7 @@ namespace BotTidus
         public Guid BotUserId { get; set; }
 
         public Guid StampRankingChannelId { get; set; }
+
+        public Guid WakaruMessageRankingChannelId { get; set; }
     }
 }

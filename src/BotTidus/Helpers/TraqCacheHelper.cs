@@ -15,12 +15,12 @@ namespace BotTidus.Helpers
 
         static TItem Set<TKey, TItem>(this IMemoryCache cache, string prop, TKey key, TItem value, TimeSpan absoluteExpiration)
         {
-            return cache.Set($"{prop}[{key}]", value, absoluteExpiration);
+            return cache.Set($"{prop}:{key}", value, absoluteExpiration);
         }
 
         static bool TryGetValue<T>(this IMemoryCache cache, string prop, object key, out T? value)
         {
-            return cache.TryGetValue($"{prop}[{key}]", out value);
+            return cache.TryGetValue($"{prop}:{key}", out value);
         }
 
         public static async ValueTask<Traq.Model.UserDetail> GetCachedUserAsync(this Traq.Api.IUserApi api, Guid id, IMemoryCache cache, CancellationToken ct)
