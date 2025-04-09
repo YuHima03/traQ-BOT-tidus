@@ -10,7 +10,7 @@ using Traq.Model;
 namespace BotTidus.Services.WakaruMessageRanking
 {
     internal class WakaruMessageRankingService(IServiceProvider services)
-        : DailyMessageCollectingService(services, TimeHelper.GetTimeSpanUntilNextTime(TimeOnly.MinValue)), // Wait until next 09:00:00(JST)
+        : DailyMessageCollectingService(services, TimeHelper.GetTimeSpanUntilNextTime(TimeOnly.MinValue) + TimeSpan.FromSeconds(10)), // Wait until next 09:00:10(JST) (delay 10sec to use cache)
           IHealthCheck
     {
         readonly ILogger<WakaruMessageRankingService> _logger = services.GetRequiredService<ILogger<WakaruMessageRankingService>>();
