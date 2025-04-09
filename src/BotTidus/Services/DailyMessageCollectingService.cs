@@ -49,7 +49,7 @@ namespace BotTidus.Services
 
                 try
                 {
-                    var cacheKey = $"DailyMessages:{jstYesterdayStart:yyyyMMdd}";
+                    var cacheKey = $"services.dailyMessageCollector:{jstYesterdayStart:yyyyMMdd}";
                     if (!_cache.TryGetValue(cacheKey, out Traq.Model.Message[]? messages) || messages is null)
                     {
                         messages = [.. await _traq.MessageApi.SearchManyMessagesAsync(new() { After = jstYesterdayStart, Before = jstYesterdayEnd }, stoppingToken)];
