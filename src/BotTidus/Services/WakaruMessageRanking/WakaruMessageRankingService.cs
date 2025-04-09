@@ -34,7 +34,7 @@ namespace BotTidus.Services.WakaruMessageRanking
                 return;
             }
             var postMessage = await _traq.MessageApi.PostMessageAsync(_postChannelId, new PostMessageRequest(":loading: Collecting message stamps...", false), ct);
-            var top10Messages = messages.Select(m => (m.Id, GetWakaruScore(m))).OrderByDescending(m => m.Item2).Select(x => x.Id).Take(10);
+            var top10Messages = messages.Select(m => (m.Id, GetWakaruScore(m))).Where(m => m.Item2 != 0).OrderByDescending(m => m.Item2).Select(x => x.Id).Take(10);
             StringBuilder sb = new();
             foreach (var id in top10Messages)
             {
