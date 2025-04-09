@@ -1,24 +1,28 @@
 version: '3'
 
-env:
-    BOT_CLIENT_TAG: bot-tidus/client:latest
-    BOT_CLIENT_CONTAINER_NAME: bot-tidus-client
-
 tasks:
-    build:
-        cmds:
-        - docker build -f src/BotTidus.BotClient/Dockerfile -t $BOT_CLIENT_TAG .
 
-    up:
-        cmds:
-        - docker run --env-file src/BotTidus.BotClient/.env --name $BOT_CLIENT_CONTAINER_NAME $BOT_CLIENT_TAG
+  install-libs:
+    cmds:
+      - task: _install-traq-extensions
 
-    down:
-        cmds:
-        - docker rm -f $BOT_CLIENT_CONTAINER_NAME
+  _install-traq-extensions:
+    internal: true
+    dir: libs
+    cmds:
+      - git clone git@github.com:YuHima03/dotnet-traq-extensions.git
+      - cd dotnet-traq-extensions && git checkout feat/message-extensions
 
-    restart:
-        cmds:
-        - task: down
-        - task: build
-        - task: up
+  dev-up:
+    cmds:
+    - docker compose up -d --build
+
+  dev-down:
+    cmds:
+    - docker compose down
+
+  dev-restart:
+    cmds:
+    - docker compose build
+    - task: down
+    - task: up
