@@ -53,10 +53,12 @@ namespace BotTidus.Services.InteractiveBot
                 return false;
             }
 
-            bool isStartWithMention;
-            if (isStartWithMention = commandText[0] == '@' && commandText[1..].StartsWith(_appConf.BotName, StringComparison.OrdinalIgnoreCase))
+            bool isStartWithMention = false;
+            var leadingEmbeddingExpLength = Traq.Extensions.Messages.Embedding.TryParseHead(commandText, out var embedding);
+            if (leadingEmbeddingExpLength != 0 && embedding.Type == Traq.Extensions.Messages.EmbeddingType.UserMention && embedding.EmbeddedId == _appConf.BotUserId)
             {
-                commandText = commandText[(_appConf.BotName.Length + 1)..];
+                commandText = commandText[leadingEmbeddingExpLength..].TrimStart();
+                isStartWithMention = true;
             }
 
             if (!ConsoleCommandReader.TryCreate(commandText, isStartWithMention, _appConf.BotCommandPrefix.AsSpan(), out var reader))
