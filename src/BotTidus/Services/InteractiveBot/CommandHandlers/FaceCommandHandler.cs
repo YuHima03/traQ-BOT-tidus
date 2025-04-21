@@ -15,6 +15,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
      * face cancel <MESSAGE>
      * face count [{-u|--user} <USER>]
      * face rank [-b|--include-bots] [-i|--inverse] [{-a|--all}|{-t|--take} <COUNT>]
+     * face update {phrase|reaction} <MESSAGE> [--add <COUNT>] [--sub <COUNT>]
      */
     struct FaceCommandHandler(AppConfig appConfig, IMemoryCache cache, BotEventUser sender, IRepositoryFactory repoFactory, ITraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
     {
@@ -34,6 +35,10 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
         bool _rank_includeBots = false;
         bool _rank_inverse = false;
         int? _rank_take = null;
+
+        UpdateRecordTypes _update_recordType;
+        uint? _update_add = null;
+        uint? _update_sub = null;
 
         static readonly int RankTakeDefault = 10;
 
@@ -226,6 +231,72 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
 
                         return new() { IsSuccessful = true, Message = sb.ToString() };
                     }
+                    case SubCommands.UpdateFaceCount:
+                    {
+                        if (_sender.Id != _appConfig.AdminUserId)
+                        {
+                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.PermissionDenied };
+                        }
+                        if (_messageIdOrUri is null)
+                        {
+                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "Message id or uri is required." };
+                        }
+
+                        Guid messageId;
+                        if (!Guid.TryParse(_messageIdOrUri, out messageId))
+                        {
+                            if (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
+                                || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId))
+                            {
+                                return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = $"Invalid message uri: {_messageIdOrUri}" };
+                            }
+                        }
+
+                        (uint add, uint sub) = (_update_add ?? 0, _update_sub ?? 0);
+                        if (add == 0 && sub == 0)
+                        {
+                            // remove record
+                            await Task.WhenAll(
+                                repo.DeleteMessageFaceScoreAsync(messageId, cancellationToken).AsTask(),
+                                _traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
+                                _traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
+                                );
+                            return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
+                        }
+
+                        var current = await repo.GetMessageFaceScoreOrDefaultAsync(messageId, cancellationToken);
+                        if (current is null)
+                        {
+                            var messageDetail = await _traq.MessageApi.GetMessageAsync(messageId, cancellationToken);
+                            current = new(messageId, messageDetail.UserId, 0, 0, 0, 0);
+                        }
+                        else
+                        {
+                            switch (_update_recordType)
+                            {
+                                case UpdateRecordTypes.Phrase:
+                                    current = current with { NegativePhraseCount = sub, PositivePhraseCount = add };
+                                    break;
+                                case UpdateRecordTypes.Reaction:
+                                    current = current with { NegativeReactionCount = sub, PositiveReactionCount = add };
+                                    break;
+                                default:
+                                    return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments };
+                            }
+                        }
+
+                        await repo.UpdateMessageFaceScoreAsync(current, cancellationToken);
+
+                        if (add != 0)
+                        {
+                            await _traq.StampApi.AddMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, new Traq.Model.PostMessageStampRequest((int)add), cancellationToken);    
+                        }
+                        if (sub != 0)
+                        {
+                            await _traq.StampApi.AddMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, new Traq.Model.PostMessageStampRequest((int)sub), cancellationToken);
+                        }
+                        return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
+                    }
                 }
             }
             catch (Exception ex)
@@ -256,6 +327,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                 "cancel" => SubCommands.CancelMessageFaceCount,
                 "count" => SubCommands.DisplayCount,
                 "rank" => SubCommands.DisplayRanking,
+                "update" => SubCommands.UpdateFaceCount,
                 _ => SubCommands.Unknown
             };
 
@@ -339,6 +411,53 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                     }
                 }
             }
+            else if (_subCommand == SubCommands.UpdateFaceCount)
+            {
+                if (!reader.NextValueOnly(out var recordType) || !reader.NextValueOnly(out var msg))
+                {
+                    return false;
+                }
+                _messageIdOrUri = msg.ToString();
+
+                switch (recordType)
+                {
+                    case "phrase":
+                        _update_recordType = UpdateRecordTypes.Phrase;
+                        break;
+                    case "reaction":
+                        _update_recordType = UpdateRecordTypes.Reaction;
+                        break;
+                    default:
+                        return false;
+                }
+                
+                while (reader.NextNamedArgument(out var arg))
+                {
+                    if (!uint.TryParse(arg.Value, out var cnt))
+                    {
+                        return false;
+                    }
+
+                    switch (arg.Name)
+                    {
+                        case "--add":
+                            if (_update_add is not null)
+                            {
+                                return false;
+                            }
+                            _update_add = cnt;
+                            break;
+
+                        case "--sub":
+                            if (_update_sub is not null)
+                            {
+                                return false;
+                            }
+                            _update_sub = cnt;
+                            break;
+                    }
+                }
+            }
 
             return reader.EnumeratedAll;
         }
@@ -348,7 +467,13 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
             Unknown = 0,
             DisplayCount,
             DisplayRanking,
-            CancelMessageFaceCount
+            CancelMessageFaceCount,
+            UpdateFaceCount,
+        }
+
+        enum UpdateRecordTypes : byte
+        {
+            Phrase, Reaction
         }
     }
 
