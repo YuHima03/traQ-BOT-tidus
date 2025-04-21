@@ -302,7 +302,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             );
                         await Task.WhenAll(
                             traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, (int)(score.PositivePhraseCount+score.PositiveReactionCount), cancellationToken).AsTask(),
-                            traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, (int)(score.NegativePhraseCount+score.NegativeReactionCount), cancellationToken).AsTask()
+                            traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, (int)(score.NegativePhraseCount+score.NegativeReactionCount), cancellationToken).AsTask()
                             );
 
                         return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
