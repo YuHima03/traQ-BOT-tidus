@@ -86,9 +86,43 @@ namespace BotTidus.RepositoryImpl
                 .ToArrayAsync(ct);
         }
 
-        ValueTask IMessageFaceScoresRepository.UpdateMessageFaceScoreAsync(MessageFaceScore score, CancellationToken ct)
+        async ValueTask<MessageFaceScore> IMessageFaceScoresRepository.AddOrUpdateMessageFaceScoreAsync(Guid messageId, Func<MessageFaceScore?, CancellationToken, ValueTask<MessageFaceScore>> configureAsync, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            await using var tx = await Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, ct);
+            try
+            {
+                var currentEntity = await MessageFaceScores.FindAsync([messageId], ct);
+                var updated = await configureAsync.Invoke(currentEntity?.ToDomainObject(), ct);
+                if (currentEntity is null)
+                {
+                    _ = await MessageFaceScores.AddAsync(new Models.MessageFaceScore()
+                    {
+                        MessageId = updated.MessageId,
+                        UserId = updated.AuthorId,
+                        NegativePhraseCount = updated.NegativePhraseCount,
+                        NegativeReactionCount = updated.NegativeReactionCount,
+                        PositivePhraseCount = updated.PositivePhraseCount,
+                        PositiveReactionCount = updated.PositiveReactionCount
+                    }, ct);
+                }
+                else
+                {
+                    currentEntity.MessageId = updated.MessageId;
+                    currentEntity.UserId = updated.AuthorId;
+                    currentEntity.NegativePhraseCount = updated.NegativePhraseCount;
+                    currentEntity.NegativeReactionCount = updated.NegativeReactionCount;
+                    currentEntity.PositivePhraseCount = updated.PositivePhraseCount;
+                    currentEntity.PositiveReactionCount = updated.PositiveReactionCount;
+                }
+                await SaveChangesAsync(ct);
+                await tx.CommitAsync(ct);
+                return updated;
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
         }
     }
 }
