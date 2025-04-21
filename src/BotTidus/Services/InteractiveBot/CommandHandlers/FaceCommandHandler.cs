@@ -252,49 +252,59 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             }
                         }
 
+                        var traq = _traq;
+
                         (uint add, uint sub) = (_update_add ?? 0, _update_sub ?? 0);
                         if (add == 0 && sub == 0)
                         {
                             // remove record
                             await Task.WhenAll(
                                 repo.DeleteMessageFaceScoreAsync(messageId, cancellationToken).AsTask(),
-                                _traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
-                                _traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
+                                traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
+                                traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
                                 );
                             return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
                         }
 
-                        var current = await repo.GetMessageFaceScoreOrDefaultAsync(messageId, cancellationToken);
-                        if (current is null)
+                        var recordType = _update_recordType;
+                        if (recordType != UpdateRecordTypes.Phrase && recordType != UpdateRecordTypes.Reaction)
                         {
-                            var messageDetail = await _traq.MessageApi.GetMessageAsync(messageId, cancellationToken);
-                            current = new(messageId, messageDetail.UserId, 0, 0, 0, 0);
+                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "Invalid record type." };
                         }
-                        else
+
+                        var score = await repo.AddOrUpdateMessageFaceScoreAsync(messageId, async (value, ct) =>
                         {
-                            switch (_update_recordType)
+                            if (value is null)
                             {
-                                case UpdateRecordTypes.Phrase:
-                                    current = current with { NegativePhraseCount = sub, PositivePhraseCount = add };
-                                    break;
-                                case UpdateRecordTypes.Reaction:
-                                    current = current with { NegativeReactionCount = sub, PositiveReactionCount = add };
-                                    break;
-                                default:
-                                    return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments };
+                                var msgDetail = await traq.MessageApi.GetMessageAsync(messageId, cancellationToken);
+                                return recordType switch
+                                {
+                                    UpdateRecordTypes.Phrase => new MessageFaceScore(messageId, msgDetail.UserId, 0, 0, 0, 0) with { NegativePhraseCount = sub, PositivePhraseCount = add },
+                                    UpdateRecordTypes.Reaction => new MessageFaceScore(messageId, msgDetail.UserId, 0, 0, 0, 0) with { NegativeReactionCount = sub, PositiveReactionCount = add },
+                                    _ => null!
+                                };
                             }
-                        }
+                            else
+                            {
+                                return recordType switch
+                                {
+                                    UpdateRecordTypes.Phrase => value with { NegativePhraseCount = sub, PositivePhraseCount = add },
+                                    UpdateRecordTypes.Reaction => value with { NegativeReactionCount = sub, PositiveReactionCount = add },
+                                    _ => null!
+                                };
+                            }
+                        },
+                        cancellationToken);
 
-                        await repo.UpdateMessageFaceScoreAsync(current, cancellationToken);
+                        await Task.WhenAll(
+                            traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
+                            traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
+                            );
+                        await Task.WhenAll(
+                            traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, (int)(score.PositivePhraseCount+score.PositiveReactionCount), cancellationToken).AsTask(),
+                            traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, (int)(score.NegativePhraseCount+score.NegativeReactionCount), cancellationToken).AsTask()
+                            );
 
-                        if (add != 0)
-                        {
-                            await _traq.StampApi.AddMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, new Traq.Model.PostMessageStampRequest((int)add), cancellationToken);    
-                        }
-                        if (sub != 0)
-                        {
-                            await _traq.StampApi.AddMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, new Traq.Model.PostMessageStampRequest((int)sub), cancellationToken);
-                        }
                         return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
                     }
                 }
@@ -430,7 +440,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                     default:
                         return false;
                 }
-                
+
                 while (reader.NextNamedArgument(out var arg))
                 {
                     if (!uint.TryParse(arg.Value, out var cnt))
