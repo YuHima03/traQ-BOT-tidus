@@ -177,10 +177,11 @@ namespace BotTidus.Services.InteractiveBot
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
                         return false;
                     }
-                    await Task.WhenAll(
-                        _traq.BotApi.LetBotJoinChannelAsync(_appConf.BotId, new Traq.Model.PostBotActionJoinRequest(message.ChannelId), ct),
-                        _traq.StampApi.AddMessageStampAsync(message.Id, StampId_Success, new Traq.Model.PostMessageStampRequest(1), ct)
-                        );
+                    if (_appConf.BotId == Guid.Empty)
+                    {
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
+                        return false;
+                    }
 
                     var stampReq = postMessageStampRequestPool.Get();
                     stampReq.Count = 1;
@@ -188,8 +189,17 @@ namespace BotTidus.Services.InteractiveBot
                     var joinReq = postBotActionJoinRequestPool.Get();
                     joinReq.ChannelId = message.ChannelId;
 
+                    try
+                    {
                         await _traq.BotApi.LetBotJoinChannelAsync(_appConf.BotId, joinReq, ct);
                         await _traq.StampApi.AddMessageStampAsync(message.Id, StampId_Success, stampReq, ct);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to join the channel.");
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
+                    }
+
                     postMessageStampRequestPool.Return(stampReq);
                     postBotActionJoinRequestPool.Return(joinReq);
                     return true;
@@ -201,6 +211,11 @@ namespace BotTidus.Services.InteractiveBot
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
                         return false;
                     }
+                    if (_appConf.BotId == Guid.Empty)
+                    {
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
+                        return false;
+                    }
 
                     var stampReq = postMessageStampRequestPool.Get();
                     stampReq.Count = 1;
@@ -208,8 +223,17 @@ namespace BotTidus.Services.InteractiveBot
                     var leaveReq = postBotActionLeaveRequestPool.Get();
                     leaveReq.ChannelId = message.ChannelId;
 
+                    try
+                    {
                         await _traq.BotApi.LetBotLeaveChannelAsync(_appConf.BotId, leaveReq, ct);
                         await _traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Wave.Id, stampReq, ct);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to leave the channel.");
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
+                    }
+
                     postMessageStampRequestPool.Return(stampReq);
                     postBotActionLeaveRequestPool.Return(leaveReq);
                     return true;
