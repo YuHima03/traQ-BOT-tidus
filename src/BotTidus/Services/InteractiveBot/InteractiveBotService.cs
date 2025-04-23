@@ -256,15 +256,29 @@ namespace BotTidus.Services.InteractiveBot
 
     readonly struct CommonCommandResult : ICommandResult
     {
-        public bool IsSuccessful { get; init; }
         public CommandErrorType ErrorType { get; init; }
+        public bool IsSuccessful { get; init; }
+        public string? Message { get; init; }
 
-        public static CommonCommandResult CreateFailed(CommandErrorType errorType)
+        public override string ToString()
+        {
+            if (IsSuccessful)
+            {
+                return Message ?? string.Empty;
+            }
+            else
+            {
+                return $"Error({ErrorType}): {Message ?? string.Empty}";
+            }
+        }
+
+        public static CommonCommandResult CreateFailed(CommandErrorType errorType, string? message = null)
         {
             return new CommonCommandResult
             {
+                ErrorType = errorType,
                 IsSuccessful = false,
-                ErrorType = errorType
+                Message = message
             };
         }
     }
