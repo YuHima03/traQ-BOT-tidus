@@ -36,5 +36,16 @@ namespace BotTidus.RepositoryImpl.Models
         [Column("updated_at")]
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime UpdatedAt { get; set; }
+
+        public Domain.MessageFaceScores.MessageFaceScore ToDomainObject()
+        {
+            return new Domain.MessageFaceScores.MessageFaceScore(
+                MessageId,
+                UserId,
+                PositivePhraseCount,
+                NegativePhraseCount,
+                PositiveReactionCount,
+                NegativeReactionCount);
+        }
     }
 }

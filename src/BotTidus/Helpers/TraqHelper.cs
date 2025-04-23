@@ -6,6 +6,27 @@ namespace BotTidus.Helpers
     {
         const int MaxSearchMessageLimit = 1_000_000;
 
+        public static async ValueTask AddManyMessageStampAsync(this Traq.Api.IStampApiAsync api, Guid messageId, Guid stampId, int count, CancellationToken ct)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            if (count == 0)
+            {
+                return;
+            }
+
+            (int quot, int rem) = Math.DivRem(count, 100);
+            Traq.Model.PostMessageStampRequest req = new(rem);
+            if (rem != 0)
+            {
+                await api.AddMessageStampAsync(messageId, stampId, req, ct);
+            }
+            req.Count = 100;
+            for (int i = 0; i < quot; i++)
+            {
+                await api.AddMessageStampAsync(messageId, stampId, req, ct);
+            }
+        }
+
         public static ValueTask<bool> TryGetUserIdFromNameAsync(this Traq.Api.IUserApi api, string username, out ValueTask<Traq.Model.User> resultTask, CancellationToken ct)
         {
             var task = api.GetUsersAsync(null, username, ct).ContinueWith(t => t.Result.SingleOrDefault()!);
