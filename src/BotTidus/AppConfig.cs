@@ -12,6 +12,8 @@ namespace BotTidus
         [NotNull]
         public string? BotName { get; set; }
 
+        public Guid BotId { get; set; }
+
         public Guid BotUserId { get; set; }
 
         public Guid StampRankingChannelId { get; set; }
