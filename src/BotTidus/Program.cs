@@ -1,4 +1,5 @@
 ﻿using BotTidus.Domain;
+using BotTidus.Helpers;
 using BotTidus.Services.ExternalServiceHealthCheck;
 using BotTidus.Services.FaceCollector;
 using BotTidus.Services.FaceReactionCollector;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.ObjectPool;
 using MySql.Data.MySqlClient;
 using Traq;
 
@@ -51,6 +53,12 @@ namespace BotTidus
                     {
                         o.ExpirationScanFrequency = TimeSpan.FromSeconds(30);
                     });
+
+                    services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>()
+                        .AddObjectPool<Traq.Model.PostBotActionJoinRequest>()
+                        .AddObjectPool<Traq.Model.PostBotActionLeaveRequest>()
+                        .AddObjectPool<Traq.Model.PostMessageRequest>()
+                        .AddObjectPool<Traq.Model.PostMessageStampRequest>();
 
                     services.AddHealthChecks()
                         .AddTypedHostedService<FaceCollectingService>()
