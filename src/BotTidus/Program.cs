@@ -100,6 +100,10 @@ namespace BotTidus
                         {
                             conf.BotUserId = botUserId;
                         }
+                        if (Guid.TryParse(ctx.Configuration["BOT_ID"], out var botId))
+                        {
+                            conf.BotId = botId;
+                        }
                         if (Guid.TryParse(ctx.Configuration["STAMP_RANKING_CHANNEL_ID"], out var stampRankingChannelId))
                         {
                             conf.StampRankingChannelId = stampRankingChannelId;
