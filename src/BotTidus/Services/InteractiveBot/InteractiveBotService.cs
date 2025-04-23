@@ -138,6 +138,33 @@ namespace BotTidus.Services.InteractiveBot
                     await HandleCommandError(message, await resultTask, ct);
                     return false;
                 }
+
+                case "join":
+                {
+                    if (reader.HasAnyArguments)
+                    {
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
+                        return false;
+                    }
+                    await Task.WhenAll(
+                        _traq.BotApi.LetBotJoinChannelAsync(_appConf.BotId, new Traq.Model.PostBotActionJoinRequest(message.ChannelId), ct),
+                        _traq.StampApi.AddMessageStampAsync(message.Id, StampId_Success, new Traq.Model.PostMessageStampRequest(1), ct)
+                        );
+                    return true;
+                }
+                case "leave":
+                {
+                    if (reader.HasAnyArguments)
+                    {
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
+                        return false;
+                    }
+                    await Task.WhenAll(
+                        _traq.BotApi.LetBotLeaveChannelAsync(_appConf.BotId, new Traq.Model.PostBotActionLeaveRequest(message.ChannelId), ct),
+                        _traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Wave.Id, new Traq.Model.PostMessageStampRequest(1), ct)
+                        );
+                    return true;
+                }
             }
 
             // Unknown command
@@ -178,5 +205,14 @@ namespace BotTidus.Services.InteractiveBot
     {
         public bool IsSuccessful { get; init; }
         public CommandErrorType ErrorType { get; init; }
+
+        public static CommonCommandResult CreateFailed(CommandErrorType errorType)
+        {
+            return new CommonCommandResult
+            {
+                IsSuccessful = false,
+                ErrorType = errorType
+            };
+        }
     }
 }
