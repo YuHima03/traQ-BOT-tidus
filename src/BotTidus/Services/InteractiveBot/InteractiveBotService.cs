@@ -43,6 +43,13 @@ namespace BotTidus.Services.InteractiveBot
                 _logger.LogInformation("Executed command [{ElapsedMilliseconds}ms]: {Command}", stopwatch.ElapsedMilliseconds, args.Message.Text);
                 return;
             }
+            else if (MessageReactions.TryGetReaction(args.Message.Text, args.Message.Author.Id, out var reaction))
+            {
+                await Task.WhenAll(
+                    reaction.Stamp is not null ? _traq.StampApi.AddMessageStampAsync(args.Message.Id, reaction.Stamp.Value, new Traq.Model.PostMessageStampRequest(1), ct) : Task.CompletedTask,
+                    reaction.Message is not null ? _traq.MessageApi.PostMessageAsync(args.Message.ChannelId, new Traq.Model.PostMessageRequest(reaction.Message, false), ct) : Task.CompletedTask
+                    );
+            }
         }
 
         async ValueTask<bool> TryHandleAsCommandAsync(BotEventMessage message, CancellationToken ct)
