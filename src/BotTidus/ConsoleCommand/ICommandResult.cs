@@ -1,5 +1,6 @@
 ﻿namespace BotTidus.ConsoleCommand
 {
+    [Obsolete]
     enum CommandErrorType : byte
     {
         None = 0,
@@ -14,6 +15,9 @@
     {
         public bool IsSuccessful { get; }
 
-        public CommandErrorType ErrorType { get; }
+        [Obsolete]
+        public CommandErrorType ErrorType => CommandErrorType.None;
+
+        public string? Error => null;
     }
 }
