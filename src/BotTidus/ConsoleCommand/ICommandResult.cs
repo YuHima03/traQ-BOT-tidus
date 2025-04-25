@@ -20,4 +20,17 @@
 
         public string? Error => null;
     }
+
+    static class CommandErrors
+    {
+        public const string UnknownCommand = "Unknown command";
+
+        public const string InvalidArguments = "Invalid arguments";
+
+        public const string InternalError = "Internal error";
+
+        public const string PermissionDenied = "Permission denied";
+
+        public const string Unknown = "Unknown error";
+    }
 }
