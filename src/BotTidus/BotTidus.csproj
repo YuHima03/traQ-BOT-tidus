@@ -31,8 +31,4 @@
     <ProjectReference Include="..\..\libs\dotnet-traq-extensions\src\Traq.Extensions.Messages\Traq.Extensions.Messages.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ConsoleCommand\" />
-  </ItemGroup>
-
 </Project>
