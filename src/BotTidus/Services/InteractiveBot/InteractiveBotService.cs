@@ -2,7 +2,6 @@
 using BotTidus.Domain;
 using BotTidus.Services.InteractiveBot.CommandHandlers;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
@@ -14,24 +13,21 @@ using Traq.Bot.Models;
 namespace BotTidus.Services.InteractiveBot
 {
     sealed class InteractiveBotService(
+        IOptions<AppConfig> appConfigOptions,
+        IMemoryCache cache,
+        HealthCheckService healthCheckService,
+        ILogger<InteractiveBotService> logger,
+        IRepositoryFactory repositoryFactory,
         ITraqApiClient traq,
-        IServiceProvider provider,
         ObjectPool<Traq.Model.PostBotActionJoinRequest> postBotActionJoinRequestPool,
         ObjectPool<Traq.Model.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
         ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
+        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool,
+        IServiceProvider provider
+        ) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
     {
-        readonly AppConfig _appConf = provider.GetRequiredService<IOptions<AppConfig>>().Value;
-        readonly IMemoryCache _cache = provider.GetRequiredService<IMemoryCache>();
-        readonly HealthCheckService _healthCheckService = provider.GetRequiredService<HealthCheckService>();
-        readonly ILogger<InteractiveBotService> _logger = provider.GetRequiredService<ILogger<InteractiveBotService>>();
-        readonly IRepositoryFactory _repoFactory = provider.GetRequiredService<IRepositoryFactory>();
+        readonly AppConfig _appConfig = appConfigOptions.Value;
         readonly ITraqApiClient _traq = traq;
-
-        public static readonly Guid StampId_Explosion = new("27475336-812d-4040-9c0e-c7367cd1c966");        // explosion
-        public static readonly Guid StampId_Question = new("408b504e-89c1-474b-abfb-16779a3ee595");         // question
-        public static readonly Guid StampId_Success = new("93d376c3-80c9-4bb2-909b-2bbe2fbf9e93");          // white_check_mark
-        public static readonly Guid StampId_PermissionDenied = new("544c04db-9cc3-4c0e-935d-571d4cf103a2"); // no_entry_sign
 
         protected override ValueTask OnDirectMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
         {
@@ -40,14 +36,14 @@ namespace BotTidus.Services.InteractiveBot
 
         protected override async ValueTask OnMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
         {
-            _logger.LogDebug("Received message: {Message}", args.Message.Text);
+            logger.LogDebug("Received message: {Message}", args.Message.Text);
 
             var stopwatch = Stopwatch.StartNew();
 
             if (await TryHandleAsCommandAsync(args.Message, ct))
             {
                 stopwatch.Stop();
-                _logger.LogInformation("Executed command [{ElapsedMilliseconds}ms]: {Command}", stopwatch.ElapsedMilliseconds, args.Message.Text);
+                logger.LogInformation("Executed command [{ElapsedMilliseconds}ms]: {Command}", stopwatch.ElapsedMilliseconds, args.Message.Text);
                 return;
             }
             else if (MessageReactions.TryGetReaction(args.Message.Text, args.Message.Author.Id, out var reaction))
@@ -78,13 +74,13 @@ namespace BotTidus.Services.InteractiveBot
 
             bool isStartWithMention = false;
             var leadingEmbeddingExpLength = Traq.Extensions.Messages.Embedding.TryParseHead(commandText, out var embedding);
-            if (leadingEmbeddingExpLength != 0 && embedding.Type == Traq.Extensions.Messages.EmbeddingType.UserMention && embedding.EmbeddedId == _appConf.BotUserId)
+            if (leadingEmbeddingExpLength != 0 && embedding.Type == Traq.Extensions.Messages.EmbeddingType.UserMention && embedding.EmbeddedId == _appConfig.BotUserId)
             {
                 commandText = commandText[leadingEmbeddingExpLength..].TrimStart();
                 isStartWithMention = true;
             }
 
-            if (!ConsoleCommandReader.TryCreate(commandText, isStartWithMention, _appConf.BotCommandPrefix.AsSpan(), out var reader))
+            if (!ConsoleCommandReader.TryCreate(commandText, isStartWithMention, _appConfig.BotCommandPrefix.AsSpan(), out var reader))
             {
                 return false;
             }
@@ -93,7 +89,7 @@ namespace BotTidus.Services.InteractiveBot
             {
                 case "face":
                 {
-                    if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_appConf, _cache, message.Author, _repoFactory, _traq), ref reader, out var resultTask, ct))
+                    if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_appConfig, cache, message.Author, repositoryFactory, _traq), ref reader, out var resultTask, ct))
                     {
                         var result = await resultTask;
                         if (result.IsSuccessful)
@@ -154,7 +150,7 @@ namespace BotTidus.Services.InteractiveBot
                 }
                 case "status":
                 {
-                    if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(_healthCheckService), ref reader, out var resultTask, ct))
+                    if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(healthCheckService), ref reader, out var resultTask, ct))
                     {
                         var result = await resultTask;
                         if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
@@ -177,7 +173,7 @@ namespace BotTidus.Services.InteractiveBot
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
                         return false;
                     }
-                    if (_appConf.BotId == Guid.Empty)
+                    if (_appConfig.BotId == Guid.Empty)
                     {
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
                         return false;
@@ -191,12 +187,12 @@ namespace BotTidus.Services.InteractiveBot
 
                     try
                     {
-                        await _traq.BotApi.LetBotJoinChannelAsync(_appConf.BotId, joinReq, ct);
+                        await _traq.BotApi.LetBotJoinChannelAsync(_appConfig.BotId, joinReq, ct);
                         await _traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
                     }
                     catch (Exception e)
                     {
-                        _logger.LogError(e, "Failed to join the channel.");
+                        logger.LogError(e, "Failed to join the channel.");
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
                     }
 
@@ -211,7 +207,7 @@ namespace BotTidus.Services.InteractiveBot
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
                         return false;
                     }
-                    if (_appConf.BotId == Guid.Empty)
+                    if (_appConfig.BotId == Guid.Empty)
                     {
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
                         return false;
@@ -225,12 +221,12 @@ namespace BotTidus.Services.InteractiveBot
 
                     try
                     {
-                        await _traq.BotApi.LetBotLeaveChannelAsync(_appConf.BotId, leaveReq, ct);
+                        await _traq.BotApi.LetBotLeaveChannelAsync(_appConfig.BotId, leaveReq, ct);
                         await _traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Wave.Id, stampReq, ct);
                     }
                     catch (Exception e)
                     {
-                        _logger.LogError(e, "Failed to leave the channel.");
+                        logger.LogError(e, "Failed to leave the channel.");
                         await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
                     }
 
@@ -257,19 +253,19 @@ namespace BotTidus.Services.InteractiveBot
             {
                 case CommandErrorType.InternalError:
                 {
-                    _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
+                    logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
                     await _traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Explosion.Id, req, ct);
                     break;
                 }
                 case CommandErrorType.PermissionDenied:
                 {
-                    _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
+                    logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
                     await _traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.NoEntrySign.Id, req, ct);
                     break;
                 }
                 default:
                 {
-                    _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
+                    logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
                     await _traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Question.Id, req, ct);
                     break;
                 }
