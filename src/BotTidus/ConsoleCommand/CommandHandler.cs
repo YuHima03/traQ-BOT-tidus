@@ -2,6 +2,7 @@
 {
     internal static class CommandHandler
     {
+        [Obsolete]
         public static bool TryExecuteCommand<THandler, TResult>(THandler handler, ref ConsoleCommandReader reader, out ValueTask<TResult> resultTask, CancellationToken ct)
             where THandler : IAsyncConsoleCommandHandler<TResult>, allows ref struct
             where TResult : struct, ICommandResult
