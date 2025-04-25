@@ -19,6 +19,8 @@
         public CommandErrorType ErrorType => CommandErrorType.None;
 
         public string? Error => null;
+
+        public string? Message => null;
     }
 
     static class CommandErrors
