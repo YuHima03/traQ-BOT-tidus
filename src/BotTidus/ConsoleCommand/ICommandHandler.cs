@@ -1,10 +1,10 @@
 ﻿namespace BotTidus.ConsoleCommand
 {
-    internal interface ICommandHandler<TArgs, out TResult>
+    internal interface ICommandHandler<TArgs, TResult>
         where TResult : ICommandResult
     {
-        public abstract static bool TryReadArguments(ConsoleCommandReader reader, out ConsoleCommandParseResult<TArgs> result);
+        public abstract static ConsoleCommandParseResult<TArgs> GetArguments(ConsoleCommandReader reader);
 
-        public abstract static TResult ExecuteAsync(TArgs args, CancellationToken cancellationToken);
+        public abstract static ValueTask<TResult> ExecuteAsync(TArgs args, CancellationToken cancellationToken);
     }
 }
