@@ -249,6 +249,27 @@ namespace BotTidus.Services.InteractiveBot
             var req = postMessageStampRequestPool.Get();
             req.Count = 1;
 
+            if (result.Error is not null)
+            {
+                switch (result.Error)
+                {
+                    case CommandErrors.InternalError:
+                        logger.LogWarning("Internal error: {Input} -> {Result}", message.Text, result.ToString());
+                        await _traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Explosion.Id, req, ct);
+                        break;
+
+                    case CommandErrors.PermissionDenied:
+                        logger.LogInformation("Permission denied: {Input} -> {Result}", message.Text, result.ToString());
+                        await _traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.NoEntrySign.Id, req, ct);
+                        break;
+
+                    default:
+                        logger.LogDebug("Error({Error}): {Input} -> {Result}", result.Error, message.Text, result.ToString());
+                        await _traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Question.Id, req, ct);
+                        break;
+                }
+            }
+
             switch (result.ErrorType)
             {
                 case CommandErrorType.InternalError:
