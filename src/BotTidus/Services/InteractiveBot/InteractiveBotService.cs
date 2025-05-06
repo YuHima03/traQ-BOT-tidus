@@ -33,6 +33,12 @@ namespace BotTidus.Services.InteractiveBot
         public static readonly Guid StampId_Success = new("93d376c3-80c9-4bb2-909b-2bbe2fbf9e93");          // white_check_mark
         public static readonly Guid StampId_PermissionDenied = new("544c04db-9cc3-4c0e-935d-571d4cf103a2"); // no_entry_sign
 
+        protected override ValueTask InitializeAsync(CancellationToken ct)
+        {
+            _logger.LogInformation("Command prefix: {Prefix}", _appConf.BotCommandPrefix);
+            return base.InitializeAsync(ct);
+        }
+
         protected override ValueTask OnDirectMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
         {
             return OnMessageCreatedAsync(args, ct);
