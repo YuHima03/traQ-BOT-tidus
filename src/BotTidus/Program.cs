@@ -76,7 +76,7 @@ namespace BotTidus
                             ob.EnableSensitiveDataLogging();
                         }
                     });
-                    services.AddTransient<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
+                    services.AddSingleton<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
 
                     services.AddTraqApiClient(o =>
                     {
