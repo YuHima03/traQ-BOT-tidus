@@ -32,7 +32,7 @@ namespace BotTidus.Services.FaceCollector
                     continue;
                 }
 
-                var repo = await _repoFactory.CreateRepositoryAsync(ct);
+                await using var repo = await _repoFactory.CreateRepositoryAsync(ct);
                 var currentTotalCount = (await repo.GetUserFaceCountAsync(m.UserId, ct)).TotalScore;
                 var (positiveCnt, negativeCnt) = MessageFaceCounter.Count(m.Content.AsSpan(), currentTotalCount);
                 if (positiveCnt == 0 && negativeCnt == 0)

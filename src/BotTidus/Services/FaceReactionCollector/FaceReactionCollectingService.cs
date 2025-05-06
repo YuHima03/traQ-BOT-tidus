@@ -53,7 +53,7 @@ namespace BotTidus.Services.FaceReactionCollector
                     continue;
                 }
 
-                var repo = await _repoFactory.CreateRepositoryAsync(stoppingToken);
+                await using var repo = await _repoFactory.CreateRepositoryAsync(stoppingToken);
                 _logger.LogDebug("Collected {Count} messages.", messages.Hits.Count);
 
                 try
