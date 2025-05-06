@@ -112,6 +112,10 @@ namespace BotTidus
                         {
                             conf.BotId = botId;
                         }
+                        if (Guid.TryParse(ctx.Configuration["HEALTH_ALERT_CHANNEL_ID"], out var healthAlertChannelId))
+                        {
+                            conf.HealthAlertChannelId = healthAlertChannelId;
+                        }
                         if (Guid.TryParse(ctx.Configuration["STAMP_RANKING_CHANNEL_ID"], out var stampRankingChannelId))
                         {
                             conf.StampRankingChannelId = stampRankingChannelId;
