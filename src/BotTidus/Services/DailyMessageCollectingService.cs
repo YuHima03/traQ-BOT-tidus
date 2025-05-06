@@ -16,7 +16,7 @@ namespace BotTidus.Services
         readonly ITraqApiClient _traq;
         readonly TraqHealthCheckPublisher _traqHealthCheck;
 
-        static DateTimeOffset JstToday => DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(9)).Date; // 00:00:00.0000000+09:00
+        static readonly TimeZoneInfo TimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time");
 
         public DailyMessageCollectingService(IServiceProvider services, TimeSpan startDelay)
         {
@@ -38,21 +38,21 @@ namespace BotTidus.Services
             PeriodicTimer timer = new(TimeSpan.FromDays(1));
             do
             {
-                var jstYesterdayStart = JstToday.AddDays(-1);                               // 00:00:00.0000000+09:00
-                var jstYesterdayEnd = jstYesterdayStart.AddTicks(TimeSpan.TicksPerDay - 1); // 23:59:59.9999999+09:00
+                var yesterdayStart = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo).Date.AddDays(-1);
+                var yesterdayEnd = yesterdayStart.AddDays(1).AddTicks(-1);
 
                 if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
                 {
-                    _logger.LogWarning("The task (stamp ranking {Date:M/d}) is skipped because the traQ service is not available.", jstYesterdayStart);
+                    _logger.LogWarning("The task (stamp ranking {Date:M/d}) is skipped because the traQ service is not available.", yesterdayStart);
                     continue;
                 }
 
                 try
                 {
-                    var cacheKey = $"services.dailyMessageCollector:{jstYesterdayStart:yyyyMMdd}";
+                    var cacheKey = $"services.dailyMessageCollector:{yesterdayStart:yyyyMMdd}";
                     if (!_cache.TryGetValue(cacheKey, out Traq.Model.Message[]? messages) || messages is null)
                     {
-                        messages = [.. await _traq.MessageApi.SearchManyMessagesAsync(new() { After = jstYesterdayStart, Before = jstYesterdayEnd }, stoppingToken)];
+                        messages = [.. await _traq.MessageApi.SearchManyMessagesAsync(new() { After = TimeZoneInfo.ConvertTimeToUtc(yesterdayStart, TimeZoneInfo), Before = TimeZoneInfo.ConvertTimeToUtc(yesterdayEnd, TimeZoneInfo) }, stoppingToken)];
                         _cache.Set(cacheKey, messages, TimeSpan.FromMinutes(5));
                     }
                     await OnCollectAsync(messages, stoppingToken);
