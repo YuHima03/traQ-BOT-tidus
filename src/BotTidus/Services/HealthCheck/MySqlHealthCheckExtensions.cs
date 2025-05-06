@@ -31,7 +31,7 @@ namespace BotTidus.Services.HealthCheck
             }
             catch (Exception e)
             {
-                return HealthCheckResult.Unhealthy("MySql server is not health.", e);
+                return HealthCheckResult.Unhealthy("MySQL server is not healthy.", e);
             }
         }
     }
