@@ -46,7 +46,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
 
         public async ValueTask<FaceCommandResult> ExecuteAsync(CancellationToken cancellationToken)
         {
-            IMessageFaceScoresRepository repo = await _repoFactory.CreateRepositoryAsync(cancellationToken);
+            await using var repo = await _repoFactory.CreateRepositoryAsync(cancellationToken);
 
             if (_help)
             {
