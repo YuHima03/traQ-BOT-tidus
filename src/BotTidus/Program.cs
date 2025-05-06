@@ -10,6 +10,7 @@ using BotTidus.Services.WakaruMessageRanking;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
@@ -61,11 +62,18 @@ namespace BotTidus
                         .AddObjectPool<Traq.Model.PostMessageStampRequest>();
 
                     services.AddHealthChecks()
+                        .AddMySqlWithDbContext<RepositoryImpl.Repository>()
                         .AddTypedHostedService<FaceCollectingService>()
                         .AddTypedHostedService<FaceReactionCollectingService>()
                         .AddTypedHostedService<StampRankingService>()
                         .AddTypedHostedService<TraqHealthCheckService>()
                         .AddTypedHostedService<WakaruMessageRankingService>();
+                    services.Configure<HealthCheckPublisherOptions>(o =>
+                    {
+                        o.Delay = TimeSpan.FromSeconds(10);
+                        o.Period = TimeSpan.FromMinutes(1);
+                    });
+                    services.AddSingleton<HealthCheckPublisher>().AddSingleton<IHealthCheckPublisher, HealthCheckPublisher>(static sp => sp.GetRequiredService<HealthCheckPublisher>());
                     services.AddSingleton<TraqHealthCheckPublisher>();
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>(ob =>
@@ -111,6 +119,10 @@ namespace BotTidus
                         if (Guid.TryParse(ctx.Configuration["BOT_ID"], out var botId))
                         {
                             conf.BotId = botId;
+                        }
+                        if (Guid.TryParse(ctx.Configuration["HEALTH_ALERT_CHANNEL_ID"], out var healthAlertChannelId))
+                        {
+                            conf.HealthAlertChannelId = healthAlertChannelId;
                         }
                         if (Guid.TryParse(ctx.Configuration["STAMP_RANKING_CHANNEL_ID"], out var stampRankingChannelId))
                         {
