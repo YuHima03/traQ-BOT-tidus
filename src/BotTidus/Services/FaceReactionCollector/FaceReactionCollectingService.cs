@@ -20,6 +20,9 @@ namespace BotTidus.Services.FaceReactionCollector
         readonly ITraqApiClient _traq = traq;
         readonly TraqHealthCheckPublisher _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
 
+        public TimeSpan Delay { get; } = TimeSpan.FromSeconds(15);
+        public TimeSpan Interval { get; } = TimeSpan.FromMinutes(1);
+
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
             if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
@@ -31,7 +34,8 @@ namespace BotTidus.Services.FaceReactionCollector
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using PeriodicTimer timer = new(TimeSpan.FromMinutes(1));
+            await Task.Delay(Delay, stoppingToken);
+            using PeriodicTimer timer = new(Interval);
 
             do
             {

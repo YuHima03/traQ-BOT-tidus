@@ -13,10 +13,12 @@ namespace BotTidus.Services
 
         protected Traq.ITraqApiClient Client { get; } = services.GetRequiredService<Traq.ITraqApiClient>();
 
+        public TimeSpan Delay { get; } = TimeSpan.FromSeconds(15);
         public TimeSpan Interval { get; } = interval.Duration();
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            await Task.Delay(Delay, stoppingToken);
             using PeriodicTimer timer = new(Interval);
             DateTimeOffset lastCollectedAt = DateTimeOffset.UtcNow;
 
