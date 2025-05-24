@@ -15,16 +15,24 @@ namespace BotTidus.Services.InteractiveBot
 {
     sealed class InteractiveBotService(
         ITraqApiClient traq,
+        IOptions<TraqApiClientOptions> traqOptions,
+        ILoggerFactory loggers,
         IServiceProvider provider,
         ObjectPool<Traq.Model.PostBotActionJoinRequest> postBotActionJoinRequestPool,
         ObjectPool<Traq.Model.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
         ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool) : Traq.Bot.WebSocket.TraqWsBot(traq, provider)
+        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool
+        )
+        : Traq.Bot.WebSocket.TraqWsBot(
+            traqOptions,
+            loggers.CreateLogger<Traq.Bot.WebSocket.TraqWsBot>(),
+            loggers.CreateLogger<Traq.Bot.TraqBot>()
+            )
     {
         readonly AppConfig _appConf = provider.GetRequiredService<IOptions<AppConfig>>().Value;
         readonly IMemoryCache _cache = provider.GetRequiredService<IMemoryCache>();
         readonly HealthCheckService _healthCheckService = provider.GetRequiredService<HealthCheckService>();
-        readonly ILogger<InteractiveBotService> _logger = provider.GetRequiredService<ILogger<InteractiveBotService>>();
+        readonly ILogger<InteractiveBotService> _logger = loggers.CreateLogger<InteractiveBotService>();
         readonly IRepositoryFactory _repoFactory = provider.GetRequiredService<IRepositoryFactory>();
         readonly ITraqApiClient _traq = traq;
 
