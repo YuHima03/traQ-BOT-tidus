@@ -11,7 +11,7 @@ namespace BotTidus
         public string BotCommandPrefix { get; set; } = string.Empty;
 
         [ConfigurationKeyName("BOT_NAME")]
-        public string? BotName { get; set; } = string.Empty;
+        public string BotName { get; set; } = string.Empty;
 
         [ConfigurationKeyName("BOT_ID")]
         public Guid BotId { get; set; }
