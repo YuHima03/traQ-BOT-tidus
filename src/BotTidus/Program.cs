@@ -69,10 +69,7 @@ namespace BotTidus
 
                     services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id));
 
-                    services.AddMemoryCache(o =>
-                    {
-                        ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind(o);
-                    });
+                    services.AddMemoryCache(ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind);
 
                     services.Configure<AppConfig>(conf =>
                     {
