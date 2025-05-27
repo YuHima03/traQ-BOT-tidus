@@ -12,7 +12,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using MySql.Data.MySqlClient;
 using Traq;
@@ -35,21 +34,6 @@ namespace BotTidus
                 })
                 .ConfigureServices((ctx, services) =>
                 {
-                    services.AddLogging(b =>
-                    {
-                        b.AddSimpleConsole(o =>
-                            {
-                                o.ColorBehavior = Microsoft.Extensions.Logging.Console.LoggerColorBehavior.Enabled;
-                                o.IncludeScopes = true;
-                            })
-                            .SetMinimumLevel(ctx.HostingEnvironment.IsDevelopment() ? LogLevel.Debug : LogLevel.Information);
-
-                        if (!ctx.HostingEnvironment.IsDevelopment())
-                        {
-                            b.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", l => LogLevel.Warning <= l);
-                        }
-                    });
-
                     services.AddMemoryCache(o =>
                     {
                         o.ExpirationScanFrequency = TimeSpan.FromSeconds(30);
@@ -68,11 +52,7 @@ namespace BotTidus
                         .AddTypedHostedService<StampRankingService>()
                         .AddTypedHostedService<TraqHealthCheckService>()
                         .AddTypedHostedService<WakaruMessageRankingService>();
-                    services.Configure<HealthCheckPublisherOptions>(o =>
-                    {
-                        o.Delay = TimeSpan.FromSeconds(10);
-                        o.Period = TimeSpan.FromMinutes(1);
-                    });
+                    services.Configure<HealthCheckPublisherOptions>(ctx.Configuration.GetSection(Constants.ConfigSections.HealthCheckPublisherOptionsSection));
                     services.AddSingleton<HealthCheckPublisher>().AddSingleton<IHealthCheckPublisher, HealthCheckPublisher>(static sp => sp.GetRequiredService<HealthCheckPublisher>());
                     services.AddSingleton<TraqHealthCheckPublisher>();
 
@@ -92,11 +72,13 @@ namespace BotTidus
                         o.BearerAuthToken = ctx.Configuration["BOT_ACCESS_TOKEN"];
                     });
 
-                    services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time"));
+                    services.AddSingleton(
+                        TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id)
+                    );
 
                     services.AddMemoryCache(o =>
                     {
-                        o.ExpirationScanFrequency = TimeSpan.FromMinutes(1);
+                        ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind(o);
                     });
 
                     services.Configure<AppConfig>(conf =>
