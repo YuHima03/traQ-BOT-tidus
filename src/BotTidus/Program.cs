@@ -34,11 +34,6 @@ namespace BotTidus
                 })
                 .ConfigureServices((ctx, services) =>
                 {
-                    services.AddMemoryCache(o =>
-                    {
-                        o.ExpirationScanFrequency = TimeSpan.FromSeconds(30);
-                    });
-
                     services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>()
                         .AddObjectPool<Traq.Model.PostBotActionJoinRequest>()
                         .AddObjectPool<Traq.Model.PostBotActionLeaveRequest>()
@@ -72,50 +67,22 @@ namespace BotTidus
                         o.BearerAuthToken = ctx.Configuration["BOT_ACCESS_TOKEN"];
                     });
 
-                    services.AddSingleton(
-                        TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id)
-                    );
+                    services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id));
 
-                    services.AddMemoryCache(o =>
-                    {
-                        ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind(o);
-                    });
+                    services.AddMemoryCache(ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind);
 
                     services.Configure<AppConfig>(conf =>
                     {
-                        var botName = ctx.Configuration["BOT_NAME"];
-                        if (string.IsNullOrEmpty(botName))
-                        {
-                            throw new Exception("The value of BOT_NAME must be set and be not empty.");
-                        }
-                        conf.BotName = botName;
+                        ctx.Configuration.Bind(conf);
 
-                        if (Guid.TryParse(ctx.Configuration["ADMIN_USER_ID"], out var adminUserId))
+                        if (string.IsNullOrWhiteSpace(conf.BotName))
                         {
-                            conf.AdminUserId = adminUserId;
+                            throw new Exception("Bot name must be set and be non-empty");
                         }
-                        if (Guid.TryParse(ctx.Configuration["BOT_USER_ID"], out var botUserId))
+                        if (string.IsNullOrWhiteSpace(conf.BotCommandPrefix))
                         {
-                            conf.BotUserId = botUserId;
+                            throw new Exception("Command prefix must be set and be non-empty.");
                         }
-                        if (Guid.TryParse(ctx.Configuration["BOT_ID"], out var botId))
-                        {
-                            conf.BotId = botId;
-                        }
-                        if (Guid.TryParse(ctx.Configuration["HEALTH_ALERT_CHANNEL_ID"], out var healthAlertChannelId))
-                        {
-                            conf.HealthAlertChannelId = healthAlertChannelId;
-                        }
-                        if (Guid.TryParse(ctx.Configuration["STAMP_RANKING_CHANNEL_ID"], out var stampRankingChannelId))
-                        {
-                            conf.StampRankingChannelId = stampRankingChannelId;
-                        }
-                        if (Guid.TryParse(ctx.Configuration["WAKARU_MESSAGE_RANKING_CHANNEL_ID"], out var wakaruMessageRankingChannelId))
-                        {
-                            conf.WakaruMessageRankingChannelId = wakaruMessageRankingChannelId;
-                        }
-
-                        conf.BotCommandPrefix = ctx.Configuration["BOT_COMMAND_PREFIX"] ?? (ctx.HostingEnvironment.IsDevelopment() ? "_//" : "//");
                     });
 
                     services.AddHostedService<FaceCollectingService>();
