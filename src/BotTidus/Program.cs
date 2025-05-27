@@ -34,11 +34,6 @@ namespace BotTidus
                 })
                 .ConfigureServices((ctx, services) =>
                 {
-                    services.AddMemoryCache(o =>
-                    {
-                        o.ExpirationScanFrequency = TimeSpan.FromSeconds(30);
-                    });
-
                     services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>()
                         .AddObjectPool<Traq.Model.PostBotActionJoinRequest>()
                         .AddObjectPool<Traq.Model.PostBotActionLeaveRequest>()
