@@ -1,6 +1,6 @@
 ﻿namespace BotTidus.Constants
 {
-    internal class ConfigSections
+    internal static class ConfigSections
     {
         public const string HealthCheckPublisherOptionsSection = "HealthCheck:Publisher";
 
