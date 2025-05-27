@@ -72,9 +72,7 @@ namespace BotTidus
                         o.BearerAuthToken = ctx.Configuration["BOT_ACCESS_TOKEN"];
                     });
 
-                    services.AddSingleton(
-                        TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id)
-                    );
+                    services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id));
 
                     services.AddMemoryCache(o =>
                     {
