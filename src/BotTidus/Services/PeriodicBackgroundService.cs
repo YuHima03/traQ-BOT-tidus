@@ -30,10 +30,15 @@ namespace BotTidus.Services
         protected abstract ValueTask ExecuteCoreAsync(CancellationToken ct);
     }
 
-    class PeriodicBackgroundServiceOptions
+    interface IPeriodicBackgroundServiceOptions
+    {
+        TimeSpan Delay { get; }
+        TimeSpan Period { get; }
+    }
+
+    class PeriodicBackgroundServiceOptions : IPeriodicBackgroundServiceOptions
     {
         public TimeSpan Delay { get; set; }
-
         public TimeSpan Period { get; set; }
     }
 }
