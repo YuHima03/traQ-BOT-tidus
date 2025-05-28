@@ -49,17 +49,11 @@ namespace BotTidus.Services.StampRanking
                     _logger.LogWarning("Unknown stamp: {}", stampId);
                     continue;
                 }
-
-                if (prevCount == count)
-                {
-                    sb.AppendLine($"| - | :{stampName}: `{stampName}` | {count} |");
-                }
-                else
-                {
-                    sb.AppendLine($"| {rank} | :{stampName}: `{stampName}` | {count} |");
-                    rank++;
-                }
+                sb.AppendLine(prevCount == count
+                    ? $"| - | :{stampName}: `{stampName}` | {count} |"
+                    : $"| {rank} | :{stampName}: `{stampName}` | {count} |");
                 prevCount = count;
+                rank++;
             }
 
             await _traq.MessageApi.PostMessageAsync(_postChannelId, new PostMessageRequest(sb.ToString(), false), ct);
