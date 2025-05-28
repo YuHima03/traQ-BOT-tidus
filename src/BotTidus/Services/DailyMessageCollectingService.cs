@@ -14,8 +14,7 @@ namespace BotTidus.Services
         readonly ILogger<DailyMessageCollectingService> _logger;
         readonly ITraqApiClient _traq;
         readonly TraqHealthCheckPublisher _traqHealthCheck;
-
-        static readonly TimeZoneInfo TimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Tokyo Standard Time");
+        readonly TimeZoneInfo _timeZoneInfo;
 
         public DailyMessageCollectingService(IServiceProvider services, TimeSpan startDelay) : base(Options.Create(new PeriodicBackgroundServiceOptions { Delay = startDelay, Period = TimeSpan.FromDays(1) }))
         {
@@ -27,11 +26,12 @@ namespace BotTidus.Services
             _logger = services.GetRequiredService<ILogger<DailyMessageCollectingService>>();
             _traq = services.GetRequiredService<ITraqApiClient>();
             _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
+            _timeZoneInfo = services.GetService<TimeZoneInfo>() ?? TimeZoneInfo.Utc;
         }
 
         protected override async ValueTask ExecuteCoreAsync(CancellationToken ct)
         {
-            var yesterdayStart = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo).Date.AddDays(-1);
+            var yesterdayStart = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _timeZoneInfo).Date.AddDays(-1);
             var yesterdayEnd = yesterdayStart.AddDays(1).AddTicks(-1);
 
             if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
@@ -45,7 +45,7 @@ namespace BotTidus.Services
                 var cacheKey = $"services.dailyMessageCollector:{yesterdayStart:yyyyMMdd}";
                 if (!_cache.TryGetValue(cacheKey, out Traq.Model.Message[]? messages) || messages is null)
                 {
-                    messages = [.. await _traq.MessageApi.SearchManyMessagesAsync(new() { After = TimeZoneInfo.ConvertTimeToUtc(yesterdayStart, TimeZoneInfo), Before = TimeZoneInfo.ConvertTimeToUtc(yesterdayEnd, TimeZoneInfo) }, ct)];
+                    messages = [.. await _traq.MessageApi.SearchManyMessagesAsync(new() { After = TimeZoneInfo.ConvertTimeToUtc(yesterdayStart, _timeZoneInfo), Before = TimeZoneInfo.ConvertTimeToUtc(yesterdayEnd, _timeZoneInfo) }, ct)];
                     _cache.Set(cacheKey, messages, TimeSpan.FromMinutes(5));
                 }
                 await OnCollectAsync(messages, ct);
