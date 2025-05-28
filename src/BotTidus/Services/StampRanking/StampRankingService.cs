@@ -30,7 +30,7 @@ namespace BotTidus.Services.StampRanking
         {
             var stampNameMap = (await _traq.StampApi.GetStampsAsync(cancellationToken: ct)).ToDictionary(s => s.Id, s => s.Name);
             var stampCount = messages.SelectMany(m => m.Stamps).GroupBy(s => s.StampId).ToDictionary(g => g.Key, ms => ms.Sum(s => s.Count));
-            var top100Stamps = stampCount.OrderByDescending(kv => kv.Value).Take(50);
+            var top50stamps = stampCount.OrderByDescending(kv => kv.Value).Take(50);
 
             var yesterday = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(9)).Date.AddDays(-1);
             StringBuilder sb = new($"""
@@ -42,7 +42,7 @@ namespace BotTidus.Services.StampRanking
 
             int prevCount = int.MaxValue;
             int rank = 1;
-            foreach (var (stampId, count) in top100Stamps)
+            foreach (var (stampId, count) in top50stamps)
             {
                 if (!stampNameMap.TryGetValue(stampId, out var stampName))
                 {
