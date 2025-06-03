@@ -1,5 +1,5 @@
-﻿using BotTidus.Domain;
-using BotTidus.Helpers;
+﻿using BotTidus.Configurations;
+using BotTidus.Domain;
 using BotTidus.Services.ExternalServiceHealthCheck;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -8,9 +8,9 @@ using Traq.Model;
 
 namespace BotTidus.Services.FaceCollector
 {
-    internal sealed class FaceCollectingService(IOptions<AppConfig> appConf, IRepositoryFactory repoFactory, IServiceProvider services) : RecentMessageCollectingService(services, TimeSpan.FromSeconds(30)), IHealthCheck
+    internal sealed class FaceCollectingService(IOptions<TraqBotOptions> botOptions, IRepositoryFactory repoFactory, IServiceProvider services) : RecentMessageCollectingService(services, TimeSpan.FromSeconds(30)), IHealthCheck
     {
-        readonly AppConfig _appConf = appConf.Value;
+        readonly TraqBotOptions _botOptions = botOptions.Value;
         readonly IRepositoryFactory _repoFactory = repoFactory;
         readonly TraqHealthCheckPublisher _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
 
@@ -27,7 +27,7 @@ namespace BotTidus.Services.FaceCollector
         {
             foreach (var m in messages)
             {
-                if (m.UserId == _appConf.BotUserId)
+                if (m.UserId == _botOptions.UserId)
                 {
                     continue;
                 }
