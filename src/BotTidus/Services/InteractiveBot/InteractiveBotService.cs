@@ -35,11 +35,6 @@ namespace BotTidus.Services.InteractiveBot
         readonly TraqBotOptions _botOptions = botOptions.Value;
         readonly ILogger<InteractiveBotService> _logger = loggers.CreateLogger<InteractiveBotService>();
 
-        public static readonly Guid StampId_Explosion = new("27475336-812d-4040-9c0e-c7367cd1c966");        // explosion
-        public static readonly Guid StampId_Question = new("408b504e-89c1-474b-abfb-16779a3ee595");         // question
-        public static readonly Guid StampId_Success = new("93d376c3-80c9-4bb2-909b-2bbe2fbf9e93");          // white_check_mark
-        public static readonly Guid StampId_PermissionDenied = new("544c04db-9cc3-4c0e-935d-571d4cf103a2"); // no_entry_sign
-
         protected override ValueTask InitializeAsync(CancellationToken ct)
         {
             _logger.LogInformation("Command prefix: {Prefix}", _botOptions.CommandPrefix);
@@ -205,7 +200,7 @@ namespace BotTidus.Services.InteractiveBot
                     try
                     {
                         await traq.BotApi.LetBotJoinChannelAsync(_botOptions.Id, joinReq, ct);
-                        await traq.StampApi.AddMessageStampAsync(message.Id, StampId_Success, stampReq, ct);
+                        await traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
                     }
                     catch (Exception e)
                     {
@@ -271,19 +266,19 @@ namespace BotTidus.Services.InteractiveBot
                 case CommandErrorType.InternalError:
                 {
                     _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Explosion, req, ct);
+                    await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Explosion.Id, req, ct);
                     break;
                 }
                 case CommandErrorType.PermissionDenied:
                 {
                     _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await traq.MessageApi.AddMessageStampAsync(message.Id, StampId_PermissionDenied, req, ct);
+                    await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.NoEntrySign.Id, req, ct);
                     break;
                 }
                 default:
                 {
                     _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Question, req, ct);
+                    await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Question.Id, req, ct);
                     break;
                 }
             }
