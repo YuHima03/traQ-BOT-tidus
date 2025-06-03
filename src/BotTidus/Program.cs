@@ -90,7 +90,7 @@ namespace BotTidus
                     services.AddHostedService<FaceCollectingService>();
                     services.AddHostedService<FaceReactionCollectingService>();
                     services.AddHostedService<InteractiveBotService>();
-                    services.AddHostedService<StampRankingService>();
+                    services.Configure<StampRankingServiceOptions>(ctx.Configuration).AddHostedService<StampRankingService>();
                     services.AddHostedService<TraqHealthCheckService>();
                 })
                 .Build();
