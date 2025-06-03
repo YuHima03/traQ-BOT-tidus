@@ -24,8 +24,5 @@ namespace BotTidus
 
         [ConfigurationKeyName("STAMP_RANKING_CHANNEL_ID")]
         public Guid StampRankingChannelId { get; set; }
-
-        [ConfigurationKeyName("WAKARU_MESSAGE_RANKING_CHANNEL_ID")]
-        public Guid WakaruMessageRankingChannelId { get; set; }
     }
 }
