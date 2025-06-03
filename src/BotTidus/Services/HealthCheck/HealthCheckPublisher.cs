@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
@@ -8,7 +9,7 @@ using Traq;
 namespace BotTidus.Services.HealthCheck
 {
     internal sealed class HealthCheckPublisher(
-        IOptions<AppConfig> config,
+        IOptions<HealthCheckAlertOptions> options,
         ILogger<HealthCheckPublisher> logger,
         ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
         ITraqApiClient traq
@@ -18,8 +19,8 @@ namespace BotTidus.Services.HealthCheck
 
         public async Task PublishAsync(HealthReport report, CancellationToken cancellationToken)
         {
-            var conf = config.Value;
-            if (conf.HealthAlertChannelId == Guid.Empty)
+            var opt = options.Value;
+            if (opt.AlertChannelId == Guid.Empty)
             {
                 logger.LogWarning("The channel to post alerts is not set.");
                 return;
@@ -65,7 +66,7 @@ namespace BotTidus.Services.HealthCheck
                 var req = postMessageRequestPool.Get();
                 req.Content = sb.ToString();
                 req.Embed = false;
-                await traq.MessageApi.PostMessageAsync(conf.HealthAlertChannelId, req, cancellationToken);
+                await traq.MessageApi.PostMessageAsync(opt.AlertChannelId, req, cancellationToken);
                 postMessageRequestPool.Return(req);
             }
             catch (Exception e)
@@ -73,5 +74,11 @@ namespace BotTidus.Services.HealthCheck
                 logger.LogError(e, "Failed to post health check alert.");
             }
         }
+    }
+
+    sealed class HealthCheckAlertOptions
+    {
+        [ConfigurationKeyName("HEALTH_ALERT_CHANNEL_ID")]
+        public Guid AlertChannelId { get; set; }
     }
 }

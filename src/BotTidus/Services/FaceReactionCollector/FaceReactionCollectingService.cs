@@ -1,4 +1,5 @@
-﻿using BotTidus.Domain;
+﻿using BotTidus.Configurations;
+using BotTidus.Domain;
 using BotTidus.Domain.MessageFaceScores;
 using BotTidus.Services.ExternalServiceHealthCheck;
 using BotTidus.Services.FaceCollector;
@@ -12,9 +13,9 @@ using Traq.Model;
 
 namespace BotTidus.Services.FaceReactionCollector
 {
-    sealed class FaceReactionCollectingService(IOptions<AppConfig> appConfig, ILogger<FaceReactionCollectingService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, IServiceProvider services) : BackgroundService, IHealthCheck
+    sealed class FaceReactionCollectingService(IOptions<TraqBotOptions> botOptions, ILogger<FaceReactionCollectingService> logger, IRepositoryFactory repoFactory, ITraqApiClient traq, IServiceProvider services) : BackgroundService, IHealthCheck
     {
-        readonly AppConfig _appConfig = appConfig.Value;
+        readonly TraqBotOptions _botOptions = botOptions.Value;
         readonly ILogger<FaceReactionCollectingService> _logger = logger;
         readonly IRepositoryFactory _repoFactory = repoFactory;
         readonly ITraqApiClient _traq = traq;
@@ -64,7 +65,7 @@ namespace BotTidus.Services.FaceReactionCollector
                 {
                     foreach (var m in messages.Hits)
                     {
-                        if (m.UserId == _appConfig.BotUserId)
+                        if (m.UserId == _botOptions.UserId)
                         {
                             continue;
                         }
