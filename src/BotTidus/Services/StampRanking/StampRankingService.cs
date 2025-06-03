@@ -1,4 +1,5 @@
 ﻿using BotTidus.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,7 +11,7 @@ namespace BotTidus.Services.StampRanking
 {
     internal class StampRankingService(
         ILogger<StampRankingService> logger,
-        IOptions<AppConfig> appConfig,
+        IOptions<StampRankingServiceOptions> options,
         ITraqApiClient traq,
         TimeZoneInfo timeZoneInfo,
         IServiceProvider services
@@ -18,7 +19,7 @@ namespace BotTidus.Services.StampRanking
         : DailyMessageCollectingService(services, TimeHelper.GetTimeSpanUntilNextTime(TimeOnly.MinValue)), // Wait until next 09:00:00(JST)
           IHealthCheck
     {
-        readonly Guid _postChannelId = appConfig.Value.StampRankingChannelId;
+        readonly Guid _postChannelId = options.Value.PostChannelId;
 
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
@@ -61,5 +62,11 @@ namespace BotTidus.Services.StampRanking
 
             await traq.MessageApi.PostMessageAsync(_postChannelId, new PostMessageRequest(sb.ToString(), false), ct);
         }
+    }
+
+    sealed class StampRankingServiceOptions
+    {
+        [ConfigurationKeyName("STAMP_RANKING_CHANNEL_ID")]
+        public Guid PostChannelId { get; set; }
     }
 }
