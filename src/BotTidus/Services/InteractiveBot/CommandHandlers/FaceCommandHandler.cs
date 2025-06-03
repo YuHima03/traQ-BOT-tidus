@@ -116,7 +116,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
                             traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
                             );
-                        return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
+                        return new() { IsSuccessful = true, ReactionStampId = Constants.TraqStamps.WhiteCheckMark.Id };
                     }
                     case SubCommands.DisplayCount:
                     {
@@ -256,7 +256,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                 traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
                                 traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
                                 );
-                            return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
+                            return new() { IsSuccessful = true, ReactionStampId = Constants.TraqStamps.WhiteCheckMark.Id };
                         }
 
                         var recordType = _update_recordType;
@@ -299,7 +299,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, (int)(score.NegativePhraseCount + score.NegativeReactionCount), cancellationToken).AsTask()
                             );
 
-                        return new() { IsSuccessful = true, ReactionStampId = InteractiveBotService.StampId_Success };
+                        return new() { IsSuccessful = true, ReactionStampId = Constants.TraqStamps.WhiteCheckMark.Id };
                     }
                 }
             }

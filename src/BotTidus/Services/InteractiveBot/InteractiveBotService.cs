@@ -205,7 +205,7 @@ namespace BotTidus.Services.InteractiveBot
                     try
                     {
                         await traq.BotApi.LetBotJoinChannelAsync(_botOptions.Id, joinReq, ct);
-                        await traq.StampApi.AddMessageStampAsync(message.Id, StampId_Success, stampReq, ct);
+                        await traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
                     }
                     catch (Exception e)
                     {
@@ -271,19 +271,19 @@ namespace BotTidus.Services.InteractiveBot
                 case CommandErrorType.InternalError:
                 {
                     _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Explosion, req, ct);
+                    await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Explosion.Id, req, ct);
                     break;
                 }
                 case CommandErrorType.PermissionDenied:
                 {
                     _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await traq.MessageApi.AddMessageStampAsync(message.Id, StampId_PermissionDenied, req, ct);
+                    await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.NoEntrySign.Id, req, ct);
                     break;
                 }
                 default:
                 {
                     _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
-                    await traq.MessageApi.AddMessageStampAsync(message.Id, StampId_Question, req, ct);
+                    await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Question.Id, req, ct);
                     break;
                 }
             }
