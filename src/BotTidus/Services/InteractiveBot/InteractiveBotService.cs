@@ -37,10 +37,10 @@ namespace BotTidus.Services.InteractiveBot
         readonly TraqBotOptions _botOptions = botOptions.Value;
         readonly ILogger<InteractiveBotService> _logger = loggers.CreateLogger<InteractiveBotService>();
 
-        protected override ValueTask InitializeAsync(CancellationToken ct)
+        protected override async ValueTask InitializeAsync(CancellationToken ct)
         {
             _logger.LogInformation("Command prefix: {Prefix}", _botOptions.CommandPrefix);
-            return base.InitializeAsync(ct);
+            await base.InitializeAsync(ct);
         }
 
         protected override ValueTask OnDirectMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
@@ -156,6 +156,23 @@ namespace BotTidus.Services.InteractiveBot
                             (mesReq.Content, mesReq.Embed) = (result.Message, false);
                             await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
                             postMessageRequestPool.Return(mesReq);
+                            return true;
+                        }
+                    }
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
+                case "rmmsg":
+                {
+                    if (CommandHandler.TryExecuteCommand<DeleteMessageCommandHandler, DeleteMessageCommandResult>(new(message.Author.Id, traq, botOptions), ref reader, out var resultTask, ct))
+                    {
+                        var result = await resultTask;
+                        if (result.IsSuccessful)
+                        {
+                            var stampReq = postMessageStampRequestPool.Get();
+                            stampReq.Count = 1;
+                            await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
+                            postMessageStampRequestPool.Return(stampReq);
                             return true;
                         }
                     }
