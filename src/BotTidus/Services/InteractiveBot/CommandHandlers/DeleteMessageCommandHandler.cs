@@ -14,7 +14,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
     {
         Guid _messageId;
 
-        public bool RequiredArgumentsAreFilled => throw new NotImplementedException();
+        public bool RequiredArgumentsAreFilled => _messageId != Guid.Empty;
 
         public async ValueTask<DeleteMessageCommandResult> ExecuteAsync(CancellationToken cancellationToken)
         {
