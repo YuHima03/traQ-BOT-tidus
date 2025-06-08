@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
@@ -12,7 +13,8 @@ namespace BotTidus.Services.HealthCheck
         IOptions<HealthCheckAlertOptions> options,
         ILogger<HealthCheckPublisher> logger,
         ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ITraqApiClient traq
+        ITraqApiClient traq,
+        IHostEnvironment env
         ) : IHealthCheckPublisher
     {
         public HealthReport? LastReport { get; private set; }
@@ -43,8 +45,10 @@ namespace BotTidus.Services.HealthCheck
                 return;
             }
 
-            StringBuilder sb = new("""
+            StringBuilder sb = new($"""
                     ### :fire: Health Check Alert
+
+                    Environment: `{env.EnvironmentName}`
 
                     | Name | Status | Description |
                     | :--- | :----: | :---------- |

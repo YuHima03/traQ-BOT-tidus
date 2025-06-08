@@ -4,6 +4,7 @@ using BotTidus.Domain;
 using BotTidus.Services.InteractiveBot.CommandHandlers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,8 @@ namespace BotTidus.Services.InteractiveBot
         ObjectPool<Traq.Model.PostBotActionJoinRequest> postBotActionJoinRequestPool,
         ObjectPool<Traq.Model.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
         ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool
+        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool,
+        IHostEnvironment hostEnv
         )
         : Traq.Bot.WebSocket.TraqWsBot(
             traqOptions,
@@ -35,10 +37,10 @@ namespace BotTidus.Services.InteractiveBot
         readonly TraqBotOptions _botOptions = botOptions.Value;
         readonly ILogger<InteractiveBotService> _logger = loggers.CreateLogger<InteractiveBotService>();
 
-        protected override ValueTask InitializeAsync(CancellationToken ct)
+        protected override async ValueTask InitializeAsync(CancellationToken ct)
         {
             _logger.LogInformation("Command prefix: {Prefix}", _botOptions.CommandPrefix);
-            return base.InitializeAsync(ct);
+            await base.InitializeAsync(ct);
         }
 
         protected override ValueTask OnDirectMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
@@ -160,9 +162,26 @@ namespace BotTidus.Services.InteractiveBot
                     await HandleCommandError(message, await resultTask, ct);
                     return false;
                 }
+                case "rmmsg":
+                {
+                    if (CommandHandler.TryExecuteCommand<DeleteMessageCommandHandler, DeleteMessageCommandResult>(new(message.Author.Id, traq, botOptions), ref reader, out var resultTask, ct))
+                    {
+                        var result = await resultTask;
+                        if (result.IsSuccessful)
+                        {
+                            var stampReq = postMessageStampRequestPool.Get();
+                            stampReq.Count = 1;
+                            await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
+                            postMessageStampRequestPool.Return(stampReq);
+                            return true;
+                        }
+                    }
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
                 case "status":
                 {
-                    if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(healthCheckService), ref reader, out var resultTask, ct))
+                    if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(healthCheckService, hostEnv), ref reader, out var resultTask, ct))
                     {
                         var result = await resultTask;
                         if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
