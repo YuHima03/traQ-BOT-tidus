@@ -1,6 +1,7 @@
 ﻿using BotTidus.Configurations;
 using BotTidus.Domain;
 using BotTidus.Helpers;
+using BotTidus.Services;
 using BotTidus.Services.ExternalServiceHealthCheck;
 using BotTidus.Services.FaceCollector;
 using BotTidus.Services.FaceReactionCollector;
@@ -92,6 +93,7 @@ namespace BotTidus
                     services.AddHostedService<InteractiveBotService>();
                     services.AddHostedService<StampRankingService>();
                     services.AddHostedService<TraqHealthCheckService>();
+                    services.AddHostedService<InitialAndFinalNotifierService>();
                 })
                 .Build();
 
