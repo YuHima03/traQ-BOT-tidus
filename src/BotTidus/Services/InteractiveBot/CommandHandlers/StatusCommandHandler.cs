@@ -1,10 +1,11 @@
 ﻿using BotTidus.ConsoleCommand;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using System.Text;
 
 namespace BotTidus.Services.InteractiveBot.CommandHandlers
 {
-    readonly struct StatusCommandHandler(HealthCheckService healthCheckService) : IAsyncConsoleCommandHandler<StatusCommandResult>
+    readonly struct StatusCommandHandler(HealthCheckService healthCheckService, IHostEnvironment hostEnv) : IAsyncConsoleCommandHandler<StatusCommandResult>
     {
         readonly HealthCheckService _healthCheckService = healthCheckService;
 
@@ -15,7 +16,9 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
             try
             {
                 var reports = await _healthCheckService.CheckHealthAsync(cancellationToken);
-                StringBuilder sb = new("""
+                StringBuilder sb = new($"""
+                    Environment: `{hostEnv.EnvironmentName}`
+
                     | Name | Status | Description |
                     | :--- | :----: | :---------- |
                     """);
