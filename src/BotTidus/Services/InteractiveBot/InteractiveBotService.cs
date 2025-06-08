@@ -4,6 +4,7 @@ using BotTidus.Domain;
 using BotTidus.Services.InteractiveBot.CommandHandlers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,8 @@ namespace BotTidus.Services.InteractiveBot
         ObjectPool<Traq.Model.PostBotActionJoinRequest> postBotActionJoinRequestPool,
         ObjectPool<Traq.Model.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
         ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool
+        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool,
+        IHostEnvironment hostEnv
         )
         : Traq.Bot.WebSocket.TraqWsBot(
             traqOptions,
@@ -162,7 +164,7 @@ namespace BotTidus.Services.InteractiveBot
                 }
                 case "status":
                 {
-                    if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(healthCheckService), ref reader, out var resultTask, ct))
+                    if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(healthCheckService, hostEnv), ref reader, out var resultTask, ct))
                     {
                         var result = await resultTask;
                         if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
