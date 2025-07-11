@@ -8,5 +8,8 @@ namespace BotTidus.RepositoryImpl
     {
         [NotNull]
         DbSet<Models.MessageFaceScore>? MessageFaceScores { get; set; }
+
+        [NotNull]
+        DbSet<Models.DiscordWebhook>? DiscordWebhooks { get; set; }
     }
 }

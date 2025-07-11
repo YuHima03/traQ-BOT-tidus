@@ -2,6 +2,7 @@
 using BotTidus.Domain;
 using BotTidus.Helpers;
 using BotTidus.Services;
+using BotTidus.Services.DiscordWebhook;
 using BotTidus.Services.ExternalServiceHealthCheck;
 using BotTidus.Services.FaceCollector;
 using BotTidus.Services.FaceReactionCollector;
@@ -94,6 +95,7 @@ namespace BotTidus
                     services.Configure<StampRankingServiceOptions>(ctx.Configuration).AddHostedService<StampRankingService>();
                     services.AddHostedService<TraqHealthCheckService>();
                     services.AddHostedService<InitialAndFinalNotifierService>();
+                    services.AddHostedService<DiscordWebhookService>();
                 })
                 .Build();
 
