@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 
 namespace BotTidus.Helpers
 {
@@ -8,10 +9,12 @@ namespace BotTidus.Helpers
         static readonly TimeSpan UserDetailExpiration = TimeSpan.FromMinutes(3);
         static readonly TimeSpan UserNameMappingExpiration = TimeSpan.FromDays(1);
         static readonly TimeSpan UserAbstractExpiration = TimeSpan.FromDays(1);
+        static readonly TimeSpan ChannelPathExpiration = TimeSpan.FromHours(2);
 
         const string Prop_User = "traq.user";
         const string Prop_UsernameMapping = "traq.usernameMap";
         const string Prop_UserAbstract = "traq.userAbstract";
+        const string Prop_ChannelPath = "traq.channel.path";
 
         static TItem Set<TKey, TItem>(this IMemoryCache cache, string prop, TKey key, TItem value, TimeSpan absoluteExpiration)
         {
@@ -78,6 +81,28 @@ namespace BotTidus.Helpers
             cache.Set(Prop_UsernameMapping, id, nameLower, UserNameMappingExpiration);
             cache.Set(Prop_UsernameMapping, nameLower, id, UserNameMappingExpiration);
             return user.Name;
+        }
+
+        public static async ValueTask<string?> TryGetCachedChannelPathAsync(this Traq.Api.IChannelApi api, Guid id, IMemoryCache cache, CancellationToken ct)
+        {
+            if (cache.TryGetValue<string>(Prop_ChannelPath, id, out var p) && p is not null)
+            {
+                return p;
+            }
+            try
+            {
+                var path = await api.GetChannelPathAsync(id, ct);
+                if (path is not null)
+                {
+                    cache.Set(Prop_ChannelPath, id, path.Path, ChannelPathExpiration);
+                    return path.Path;
+                }
+                return null;
+            }
+            catch (Traq.Client.ApiException ex) when (ex.ErrorCode == (int)HttpStatusCode.NotFound)
+            {
+                return null;
+            }
         }
 
         public static ValueTask<bool> TryGetCachedUserIdAsync(this Traq.Api.IUserApi api, string name, IMemoryCache cache, out ValueTask<Guid> resultTask, CancellationToken ct)
