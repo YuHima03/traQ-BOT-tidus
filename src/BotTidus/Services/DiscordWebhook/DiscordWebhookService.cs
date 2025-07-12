@@ -7,7 +7,6 @@ using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
-using System.Text.Json.Serialization;
 using Traq;
 using Traq.Extensions.Messages;
 using Traq.Model;
@@ -38,9 +37,10 @@ namespace BotTidus.Services.DiscordWebhook
             }
 
             await using var repo = await repositoryFactory.CreateRepositoryAsync(ct);
-            var webhooks = (await repo.GetDiscordWebhooksAsync(false, ct)).GroupBy(x => x.UserId);
+            var webhooks = await repo.GetDiscordWebhooksAsync(false, ct);
+            var userWebhooks = webhooks.GroupBy(x => x.UserId);
 
-            List<Task> webhookTasks = [];
+            Dictionary<Guid, List<DiscordWebhookMessage.Embed>> webhookEmbeds = [];
 
             HashSet<Guid> mentionedUsers = [];
             HashSet<Guid> mentionedGroups = [];
@@ -120,20 +120,31 @@ namespace BotTidus.Services.DiscordWebhook
                 }
 
                 var authorName = await traq.UserApi.GetCachedUserNameAsync(msg.UserId, cache, ct);
-                DiscordWebhookMessage webhookMessage = new()
+                var authorIconUrl = Uri.TryCreate($"{_botOptions.TraqApiBaseAddress.AsSpan().TrimEnd('/')}/public/icon/{Uri.EscapeDataString(authorName)}", UriKind.Absolute, out var _uri) ? _uri : null;
+                var channelPath = await traq.ChannelApi.TryGetCachedChannelPathAsync(msg.ChannelId, cache, ct);
+                DiscordWebhookMessage.Embed whEmbed = new()
                 {
-                    Embed = [
+                    Author = new()
+                    {
+                        Name = authorName,
+                        IconUrl = authorIconUrl
+                    },
+                    Description = plainTextBuilder.ToString(),
+                    Fields = [
                         new() {
-                            Author = new() {
-                                Name = authorName,
-                                IconUrl = string.Concat(_botOptions.TraqApiBaseAddress.AsSpan().TrimEnd('/'), "/public/icon/", authorName)
-                            },
-                            Description = plainTextBuilder.ToString()
+                            Inline = false,
+                            Name = "",
+                            Value = $"[メッセージを閲覧]({new UriBuilder { Host = _traqHost, Path = $"messages/{msg.Id}" }})"
                         }
                     ],
+                    Footer = new()
+                    {
+                        Text = channelPath is not null ? string.Concat("#", channelPath.AsSpan()) : null,
+                    },
+                    Timestamp = msg.CreatedAt,
                 };
 
-                foreach (var g in webhooks)
+                foreach (var g in userWebhooks)
                 {
                     var userId = g.Key;
                     var userDetail = await traq.UserApi.GetCachedUserAsync(userId, cache, ct);
@@ -148,52 +159,53 @@ namespace BotTidus.Services.DiscordWebhook
                             || ((w.NotifiesOn & Domain.DiscordWebhook.MessageFilter.GroupMentioned) != 0 && mentionedGroups.Intersect(userDetail.Groups).Any())
                             || ((w.NotifiesOn & Domain.DiscordWebhook.MessageFilter.UserMessageCited) != 0 && citedUsers.Contains(userId)))
                         {
-                            webhookTasks.Add(Task.Run(async () =>
+                            if (webhookEmbeds.TryGetValue(w.Id, out var embeds))
                             {
-                                try
-                                {
-                                    var reqContent = JsonContent.Create(webhookMessage, JsonMediaType);
-                                    var res = await _httpClient.PostAsync(w.PostUrl, reqContent, ct);
-                                    if (!res.IsSuccessStatusCode)
-                                    {
-                                        logger.LogWarning("Discord webhook returned {StatusCode} for user {UserId} with message: {MessageId}", res.StatusCode, userId, msg.UserId);
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    logger.LogError(ex, "Failed to send Discord webhook message.");
-                                }
-                            }, ct));
+                                embeds.Add(whEmbed);
+                            }
+                            else
+                            {
+                                webhookEmbeds.Add(w.Id, [whEmbed]);
+                            }
                         }
                     }
                 }
             }
 
-            await Task.WhenAll(webhookTasks);
+            await Task.WhenAll(webhooks
+                .Where(w => webhookEmbeds.ContainsKey(w.Id))
+                .SelectMany(w => GetWebhookTasks(w, webhookEmbeds[w.Id], ct))
+            );
         }
-    }
 
-    file sealed class DiscordWebhookMessage
-    {
-        [JsonPropertyName("embeds")]
-        public required DiscordWebhookMessageEmbed[] Embed { get; init; }
-    }
-
-    file sealed class DiscordWebhookMessageEmbed
-    {
-        [JsonPropertyName("author")]
-        public required DiscordWebhookMessageEmbedAuthor Author { get; init; }
-
-        [JsonPropertyName("description")]
-        public required string Description { get; init; }
-    }
-
-    file sealed class DiscordWebhookMessageEmbedAuthor
-    {
-        [JsonPropertyName("name")]
-        public required string Name { get; init; }
-
-        [JsonPropertyName("icon_url")]
-        public required string IconUrl { get; init; }
+        IEnumerable<Task> GetWebhookTasks(Domain.DiscordWebhook.DiscordWebhook webhook, IEnumerable<DiscordWebhookMessage.Embed> embeds, CancellationToken ct)
+        {
+            if (!embeds.Any())
+            {
+                yield return Task.CompletedTask;
+                yield break;
+            }
+            foreach (var es in embeds.Chunk(10))
+            {
+                yield return Task.Run(async () =>
+                {
+                    DiscordWebhookMessage webhookMessage = new() { Embeds = es };
+                    try
+                    {
+                        var reqContent = JsonContent.Create(webhookMessage, JsonMediaType);
+                        var res = await _httpClient.PostAsync(webhook.PostUrl, reqContent, ct);
+                        if (!res.IsSuccessStatusCode)
+                        {
+                            logger.LogWarning("Discord webhook returned {StatusCode} -> {Response}", res.StatusCode, res.Content);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Failed to send Discord webhook message.");
+                    }
+                });
+            }
+            yield break;
+        }
     }
 }
