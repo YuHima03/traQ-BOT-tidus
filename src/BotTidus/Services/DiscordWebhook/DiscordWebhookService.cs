@@ -134,7 +134,7 @@ namespace BotTidus.Services.DiscordWebhook
                         new() {
                             Inline = false,
                             Name = "",
-                            Value = $"[メッセージを閲覧]({new UriBuilder { Host = _traqHost, Path = $"messages/{msg.Id}" }})"
+                            Value = $"[メッセージを閲覧]({new UriBuilder { Scheme = "https", Host = _traqHost, Path = $"messages/{msg.Id}" }})"
                         }
                     ],
                     Footer = new()
