@@ -16,6 +16,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
+using System.Text.Json.Serialization;
 using Traq;
 
 namespace BotTidus
@@ -75,7 +76,9 @@ namespace BotTidus
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>((sp, ob) =>
                     {
-                        ob.UseMySQL(sp.GetRequiredService<IOptions<DbConnectionOptions>>().Value.GetConnectionString());
+                        var connStr = sp.GetRequiredService<IOptions<DbConnectionOptions>>().Value.GetConnectionString();
+                        ob.UseMySql(connStr, MySqlServerVersion.LatestSupportedServerVersion);
+                        ob.UseModel(RepositoryImpl.CompiledModels.RepositoryModel.Instance);
                         if (ctx.HostingEnvironment.IsDevelopment())
                         {
                             ob.EnableSensitiveDataLogging();
@@ -87,7 +90,8 @@ namespace BotTidus
 
                     services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id));
 
-                    services.AddMemoryCache(ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind);
+                    services.Configure<Microsoft.Extensions.Caching.Memory.MemoryCacheOptions>(ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection));
+                    services.AddMemoryCache();
 
                     services.AddHostedService<FaceCollectingService>();
                     services.AddHostedService<FaceReactionCollectingService>();
@@ -103,4 +107,7 @@ namespace BotTidus
             await host.RunAsync(cts.Token);
         }
     }
+
+    [JsonSerializable(typeof(DiscordWebhookMessage))]
+    public partial class AppJsonSerializerContext : JsonSerializerContext;
 }
