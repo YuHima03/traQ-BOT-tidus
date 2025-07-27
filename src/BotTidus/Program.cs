@@ -87,7 +87,8 @@ namespace BotTidus
 
                     services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id));
 
-                    services.AddMemoryCache(ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind);
+                    services.Configure<Microsoft.Extensions.Caching.Memory.MemoryCacheEntryOptions>(ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection));
+                    services.AddMemoryCache();
 
                     services.AddHostedService<FaceCollectingService>();
                     services.AddHostedService<FaceReactionCollectingService>();

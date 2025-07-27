@@ -8,6 +8,10 @@
     <Nullable>enable</Nullable>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PublishAot>true</PublishAot>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
   </PropertyGroup>
 
