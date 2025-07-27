@@ -76,7 +76,9 @@ namespace BotTidus
 
                     services.AddDbContextFactory<RepositoryImpl.Repository>((sp, ob) =>
                     {
-                        ob.UseMySQL(sp.GetRequiredService<IOptions<DbConnectionOptions>>().Value.GetConnectionString());
+                        var connStr = sp.GetRequiredService<IOptions<DbConnectionOptions>>().Value.GetConnectionString();
+                        ob.UseMySql(connStr, MySqlServerVersion.LatestSupportedServerVersion);
+                        ob.UseModel(RepositoryImpl.CompiledModels.RepositoryModel.Instance);
                         if (ctx.HostingEnvironment.IsDevelopment())
                         {
                             ob.EnableSensitiveDataLogging();
