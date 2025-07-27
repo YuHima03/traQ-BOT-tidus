@@ -192,7 +192,7 @@ namespace BotTidus.Services.DiscordWebhook
                     DiscordWebhookMessage webhookMessage = new() { Embeds = es };
                     try
                     {
-                        var reqContent = JsonContent.Create(webhookMessage, AppJsonSerializerContext.Default.DiscordWebhook, JsonMediaType);
+                        var reqContent = JsonContent.Create(webhookMessage, AppJsonSerializerContext.Default.DiscordWebhookMessage, JsonMediaType);
                         var res = await _httpClient.PostAsync(webhook.PostUrl, reqContent, ct);
                         if (!res.IsSuccessStatusCode)
                         {
