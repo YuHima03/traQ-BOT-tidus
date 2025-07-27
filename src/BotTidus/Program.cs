@@ -16,6 +16,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
+using System.Text.Json.Serialization;
 using Traq;
 
 namespace BotTidus
@@ -104,4 +105,7 @@ namespace BotTidus
             await host.RunAsync(cts.Token);
         }
     }
+
+    [JsonSerializable(typeof(Domain.DiscordWebhook.DiscordWebhook))]
+    public partial class AppJsonSerializerContext : JsonSerializerContext;
 }

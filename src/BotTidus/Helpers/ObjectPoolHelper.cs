@@ -1,13 +1,14 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.ObjectPool;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 
 namespace BotTidus.Helpers
 {
     internal static class ObjectPoolHelper
     {
-        public static IServiceCollection AddObjectPool<T>(this IServiceCollection services)
+        public static IServiceCollection AddObjectPool<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(this IServiceCollection services)
             where T : class
         {
             services.TryAddSingleton(sp =>
@@ -19,7 +20,7 @@ namespace BotTidus.Helpers
         }
     }
 
-    file sealed class PooledObjectPolicySlim<T> : IPooledObjectPolicy<T>
+    file sealed class PooledObjectPolicySlim<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T> : IPooledObjectPolicy<T>
         where T : class
     {
         static readonly Func<T> DefaultConstructor = Expression.Lambda<Func<T>>(Expression.New(typeof(T))).Compile();
