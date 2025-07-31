@@ -109,5 +109,5 @@ namespace BotTidus
     }
 
     [JsonSerializable(typeof(DiscordWebhookMessage))]
-    public partial class AppJsonSerializerContext : JsonSerializerContext;
+    partial class AppJsonSerializerContext : JsonSerializerContext;
 }
