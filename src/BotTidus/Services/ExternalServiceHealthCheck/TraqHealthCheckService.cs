@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Net;
+using System.Net.NetworkInformation;
 using Traq;
 
 namespace BotTidus.Services.ExternalServiceHealthCheck

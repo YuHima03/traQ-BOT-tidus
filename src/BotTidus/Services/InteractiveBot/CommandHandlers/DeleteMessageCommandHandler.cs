@@ -40,7 +40,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                 await traq.MessageApi.DeleteMessageAsync(_messageId, cancellationToken);
                 return new DeleteMessageCommandResult { IsSuccessful = true };
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 return new DeleteMessageCommandResult { IsSuccessful = false, Message = e.Message, ErrorType = CommandErrorType.InternalError };
             }
