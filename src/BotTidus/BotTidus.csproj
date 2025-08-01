@@ -34,7 +34,7 @@
     <PackageReference Include="System.Linq.Async" Version="6.0.3" />
     <PackageReference Include="System.Runtime.Caching" Version="9.0.7" />
     <PackageReference Include="Traq" Version="0.4.0" />
-    <PackageReference Include="Traq.Bot" Version="0.2.0" />
+    <PackageReference Include="Traq.Bot" Version="0.3.0" />
     <PackageReference Include="Yuh.Collections" Version="1.0.0-rc.2" />
   </ItemGroup>
 
