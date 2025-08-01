@@ -20,12 +20,6 @@ namespace BotTidus.Services
     {
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            if (alertOptions.Value.AlertChannelId == Guid.Empty)
-            {
-                logger.LogWarning("Alert channel ID is not set. Skipping initial notification.");
-                return;
-            }
-
             try
             {
                 var req = postMessageRequestPool.Get();
@@ -49,12 +43,6 @@ namespace BotTidus.Services
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (alertOptions.Value.AlertChannelId == Guid.Empty)
-            {
-                logger.LogWarning("Alert channel ID is not set. Skipping final notification.");
-                return;
-            }
-
             try
             {
                 var req = postMessageRequestPool.Get();

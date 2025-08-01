@@ -1,13 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using System.Diagnostics.CodeAnalysis;
 
 namespace BotTidus.Services.HealthCheck
 {
     internal static class MySqlHealthCheckExtensions
     {
-        public static IHealthChecksBuilder AddMySqlWithDbContext<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] TDbContext>(this IHealthChecksBuilder builder)
+        public static IHealthChecksBuilder AddMySqlWithDbContext<TDbContext>(this IHealthChecksBuilder builder)
             where TDbContext : DbContext
         {
             return builder.Add(new HealthCheckRegistration(
