@@ -35,7 +35,7 @@ namespace BotTidus.RepositoryImpl
         {
             return await MessageFaceScores
                 .Where(r => r.MessageId == id)
-                .Select(r => new MessageFaceScore(r.MessageId, r.UserId, r.NegativePhraseCount, r.NegativeReactionCount, r.PositivePhraseCount, r.PositiveReactionCount))
+                .Select(r => r.ToDomainObject())
                 .SingleAsync(ct);
         }
 
@@ -43,7 +43,7 @@ namespace BotTidus.RepositoryImpl
         {
             return await MessageFaceScores
                 .Where(r => r.MessageId == id)
-                .Select(r => new MessageFaceScore(r.MessageId, r.UserId, r.NegativePhraseCount, r.NegativeReactionCount, r.PositivePhraseCount, r.PositiveReactionCount))
+                .Select(r => r.ToDomainObject())
                 .SingleOrDefaultAsync(ct);
         }
 
@@ -51,7 +51,7 @@ namespace BotTidus.RepositoryImpl
         {
             return await MessageFaceScores
                 .Where(r => r.UserId == userId)
-                .Select(r => new MessageFaceScore(r.MessageId, r.UserId, r.NegativePhraseCount, r.NegativeReactionCount, r.PositivePhraseCount, r.PositiveReactionCount))
+                .Select(r => r.ToDomainObject())
                 .ToArrayAsync(ct);
         }
 

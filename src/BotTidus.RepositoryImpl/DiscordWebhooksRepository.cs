@@ -7,12 +7,9 @@ namespace BotTidus.RepositoryImpl
     {
         public async ValueTask<DiscordWebhook[]> GetDiscordWebhooksAsync(bool includeDisabled, CancellationToken ct)
         {
-            var q = includeDisabled switch
-            {
-                true => DiscordWebhooks.AsQueryable(),
-                false => DiscordWebhooks.Where(x => x.IsEnabled)
-            };
-            return await q.Select(x => x.ToDomainObject()).ToArrayAsync(ct).ConfigureAwait(false);
+            return includeDisabled
+                ? await DiscordWebhooks.Select(x => x.ToDomainObject()).ToArrayAsync(ct)
+                : await DiscordWebhooks.Where(x => x.IsEnabled).Select(x => x.ToDomainObject()).ToArrayAsync(ct);
         }
     }
 }
