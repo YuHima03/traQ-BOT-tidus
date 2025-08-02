@@ -40,3 +40,14 @@ tasks:
     - docker compose build
     - task: down
     - task: up
+
+  ef-native-aot:
+    desc: Precompiles model types used by the DbContext class for Native AOT compilation.
+    cmds:
+      - |
+        dotnet ef dbcontext optimize \
+          --project         src/BotTidus.RepositoryImpl \
+          --startup-project src/BotTidus \
+          --output-dir      CompiledModels \
+          --precompile-queries \
+          --nativeaot
