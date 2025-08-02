@@ -6,7 +6,7 @@ namespace BotTidus.Helpers
     {
         const int MaxSearchMessageLimit = 1_000_000;
 
-        public static async ValueTask AddManyMessageStampAsync(this Traq.Api.IStampApiAsync api, Guid messageId, Guid stampId, int count, CancellationToken ct)
+        public static async ValueTask AddManyMessageStampAsync(this Traq.Messages.MessagesRequestBuilder messages, Guid messageId, Guid stampId, int count, CancellationToken ct)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(count);
             if (count == 0)
@@ -15,26 +15,26 @@ namespace BotTidus.Helpers
             }
 
             (int quot, int rem) = Math.DivRem(count, 100);
-            Traq.Model.PostMessageStampRequest req = new(rem);
+            Traq.Models.PostMessageStampRequest req = new() { Count = rem };
             if (rem != 0)
             {
-                await api.AddMessageStampAsync(messageId, stampId, req, ct);
+                await messages[messageId].Stamps[stampId].PostAsync(req, null, ct);
             }
             req.Count = 100;
             for (int i = 0; i < quot; i++)
             {
-                await api.AddMessageStampAsync(messageId, stampId, req, ct);
+                await messages[messageId].Stamps[stampId].PostAsync(req, null, ct);
             }
         }
 
-        public static ValueTask<bool> TryGetUserIdFromNameAsync(this Traq.Api.IUserApi api, string username, out ValueTask<Traq.Model.User> resultTask, CancellationToken ct)
+        public static ValueTask<bool> TryGetUserIdFromNameAsync(this Traq.Users.UsersRequestBuilder users, string username, out ValueTask<Traq.Models.User> resultTask, CancellationToken ct)
         {
-            var task = api.GetUsersAsync(null, username, ct).ContinueWith(t => t.Result.SingleOrDefault()!);
-            resultTask = new(task);
+            var task = users.GetAsync(conf => conf.QueryParameters.Name = username, ct).ContinueWith(t => t.Result?.SingleOrDefault());
+            resultTask = new(task!);
             return new(task.ContinueWith(t => t.Result is not null));
         }
 
-        public static async ValueTask<List<Traq.Model.Message>> SearchManyMessagesAsync(this Traq.Api.IMessageApiAsync api, SearchQuery query, CancellationToken ct)
+        public static async ValueTask<List<Traq.Models.Message>> SearchManyMessagesAsync(this Traq.Messages.MessagesRequestBuilder messages, SearchQuery query, CancellationToken ct)
         {
             var limit = query.Limit ?? MaxSearchMessageLimit; // request limit is 10,000.
             ArgumentOutOfRangeException.ThrowIfNegative(limit);
@@ -42,20 +42,39 @@ namespace BotTidus.Helpers
 
             var before = query.Before ?? DateTimeOffset.UtcNow;
 
-            List<Traq.Model.Message> messages = [];
+            Traq.Messages.MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters queryParams = new()
+            {
+                Word = query.Word,
+                After = query.After,
+                Before = before,
+                In = query.ChannelId,
+                To = query.MentionedUsersId is not null ? [.. query.MentionedUsersId] : [],
+                From = query.AuthorsId is not null ? [.. query.AuthorsId] : [],
+                Citation = query.CitedMessageId,
+                Bot = query.AuthorIsBot,
+                HasURL = query.HasUrl,
+                HasAttachments = query.HasAttachments,
+                HasImage = query.HasImage,
+                HasVideo = query.HasVideo,
+                HasAudio = query.HasAudio,
+                Limit = 100,
+                Offset = 0,
+                SortAsGetSortQueryParameterType = null
+            };
+            List<Traq.Models.Message> result = [];            
             for (int requestCount = 0; requestCount < MaxSearchMessageLimit / 100; requestCount++)
             {
-                var result = await api.SearchMessagesAsync(query.Word, query.After, before, query.ChannelId, query.MentionedUsersId, query.AuthorsId, query.CitedMessageId, query.AuthorIsBot, query.HasUrl, query.HasAttachments, query.HasImage, query.HasVideo, query.HasAudio, 100, 0, null, ct);
-                if (result.Hits.Count == 0)
+                var reqRes = await messages.GetAsMessagesGetResponseAsync(conf => conf.QueryParameters = queryParams, ct);
+                if (reqRes?.Hits?.Count is not > 0)
                 {
-                    return messages;
+                    return result;
                 }
-                messages.AddRange(CollectionsMarshal.AsSpan(result.Hits));
-                if (result.Hits.Count < 100)
+                result.AddRange(CollectionsMarshal.AsSpan(reqRes.Hits));
+                if (reqRes.Hits.Count < 100)
                 {
-                    return messages;
+                    return result;
                 }
-                before = messages[^1].CreatedAt - TimeSpan.FromMicroseconds(1);
+                before = result[^1].CreatedAt!.Value - TimeSpan.FromMicroseconds(1);
             }
             throw new Exception("Too many requests.");
         }
