@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Traq;
 
 namespace BotTidus.Configurations
 {
@@ -25,11 +24,5 @@ namespace BotTidus.Configurations
 
         [ConfigurationKeyName("BOT_USER_ID")]
         public Guid UserId { get; set; }
-
-        public TraqApiClientOptions GetTraqOptions() => new()
-        {
-            BaseAddress = TraqApiBaseAddress ?? throw new InvalidOperationException("The base address of the traQ API is not set."),
-            BearerAuthToken = TraqAccessToken
-        };
     }
 }
