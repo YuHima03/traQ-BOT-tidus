@@ -13,6 +13,10 @@ WORKDIR /libs
 RUN git clone https://github.com/YuHima03/dotnet-traq-extensions.git
 WORKDIR /libs/dotnet-traq-extensions
 RUN git checkout feat/message-extensions
+WORKDIR /libs
+RUN git clone https://github.com/YuHima03/dotnet-traq.git
+WORKDIR /libs/dotnet-traq
+RUN git checkout aot
 
 # Build the service project.
 FROM with-libs AS build
