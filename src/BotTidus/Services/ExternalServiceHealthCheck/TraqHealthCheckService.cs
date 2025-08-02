@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Kiota.Abstractions;
 using System.Net;
 using Traq;
 
@@ -8,7 +9,7 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
 {
     internal class TraqHealthCheckService(
         ILogger<TraqHealthCheckService> logger,
-        ITraqApiClient traq,
+        TraqApiClient traq,
         TraqHealthCheckPublisher publisher) : BackgroundService, IHealthCheck
     {
         public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
@@ -30,14 +31,14 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
                 publisher.LastCheckedAt = DateTimeOffset.UtcNow;
                 try
                 {
-                    _ = await traq.MeApi.GetMeAsync(cancellationToken: stoppingToken);
+                    _ = await traq.Users.Me.GetAsync(cancellationToken: stoppingToken) ?? throw new Exception("The API response is null");
                     publisher.CurrentStatus = TraqStatus.Available;
                 }
                 catch (Exception ex)
                 {
-                    if (ex is Traq.Client.ApiException apiException)
+                    if (ex is ApiException apiException)
                     {
-                        switch (apiException.ErrorCode)
+                        switch (apiException.ResponseStatusCode)
                         {
                             case (int)HttpStatusCode.Forbidden:
                             case (int)HttpStatusCode.Unauthorized:

@@ -15,21 +15,20 @@ using Traq.Bot.Models;
 namespace BotTidus.Services.InteractiveBot
 {
     sealed class InteractiveBotService(
-        ITraqApiClient traq,
-        IOptions<TraqApiClientOptions> traqOptions,
+        TraqApiClient traq,
         IOptions<TraqBotOptions> botOptions,
         ILoggerFactory loggers,
         IRepositoryFactory repoFactory,
         IMemoryCache cache,
         HealthCheckService healthCheckService,
-        ObjectPool<Traq.Model.PostBotActionJoinRequest> postBotActionJoinRequestPool,
-        ObjectPool<Traq.Model.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
-        ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool,
+        ObjectPool<Traq.Models.PostBotActionJoinRequest> postBotActionJoinRequestPool,
+        ObjectPool<Traq.Models.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
+        ObjectPool<Traq.Models.PostMessageRequest> postMessageRequestPool,
+        ObjectPool<Traq.Models.PostMessageStampRequest> postMessageStampRequestPool,
         IHostEnvironment hostEnv
         )
         : Traq.Bot.WebSocket.TraqWsBot(
-            traqOptions,
+            Options.Create(new TraqApiClientOptions() { BaseAddress = botOptions.Value.TraqApiBaseAddress!, BearerAuthToken = botOptions.Value.TraqAccessToken }),
             loggers.CreateLogger<Traq.Bot.WebSocket.TraqWsBot>(),
             loggers.CreateLogger<Traq.Bot.TraqBot>()
             )
@@ -62,19 +61,20 @@ namespace BotTidus.Services.InteractiveBot
             }
             else if (MessageReactions.TryGetReaction(args.Message.Text, args.Message.Author.Id, out var reaction))
             {
-                var stampReq = postMessageStampRequestPool.Get();
-                stampReq.Count = 1;
-
-                var mesReq = postMessageRequestPool.Get();
-                (mesReq.Content, mesReq.Embed) = (reaction.Message!, false);
-
-                await Task.WhenAll(
-                    reaction.Stamp is not null ? traq.StampApi.AddMessageStampAsync(args.Message.Id, reaction.Stamp.Value, stampReq, ct) : Task.CompletedTask,
-                    reaction.Message is not null ? traq.MessageApi.PostMessageAsync(args.Message.ChannelId, mesReq, ct) : Task.CompletedTask
-                    );
-
-                postMessageStampRequestPool.Return(stampReq);
-                postMessageRequestPool.Return(mesReq);
+                if (reaction.Stamp is not null)
+                {
+                    var stampReq = postMessageStampRequestPool.Get();
+                    stampReq.Count = 1;
+                    await traq.Messages[args.Message.Id].Stamps[reaction.Stamp.Value].PostAsync(stampReq, cancellationToken: ct);
+                    postMessageStampRequestPool.Return(stampReq);
+                }
+                if (!string.IsNullOrWhiteSpace(reaction.Message))
+                {
+                    var mesReq = postMessageRequestPool.Get();
+                    (mesReq.Content, mesReq.Embed) = (reaction.Message, false);
+                    await traq.Channels[args.Message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
+                    postMessageRequestPool.Return(mesReq);
+                }
             }
         }
 
@@ -102,169 +102,169 @@ namespace BotTidus.Services.InteractiveBot
             switch (reader.CommandName)
             {
                 case "face":
+                {
+                    if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_botOptions, cache, message.Author, repoFactory, traq), ref reader, out var resultTask, ct))
                     {
-                        if (CommandHandler.TryExecuteCommand<FaceCommandHandler, FaceCommandResult>(new(_botOptions, cache, message.Author, repoFactory, traq), ref reader, out var resultTask, ct))
+                        var result = await resultTask;
+                        if (result.IsSuccessful)
                         {
-                            var result = await resultTask;
-                            if (result.IsSuccessful)
-                            {
-                                if (!string.IsNullOrWhiteSpace(result.Message))
-                                {
-                                    var mesReq = postMessageRequestPool.Get();
-                                    (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                    await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
-                                    postMessageRequestPool.Return(mesReq);
-                                }
-                                else if (result.ReactionStampId is not null)
-                                {
-                                    var stampReq = postMessageStampRequestPool.Get();
-                                    stampReq.Count = 1;
-                                    await traq.MessageApi.AddMessageStampAsync(message.Id, result.ReactionStampId.Value, stampReq, ct);
-                                    postMessageStampRequestPool.Return(stampReq);
-                                }
-                                return true;
-                            }
-                        }
-                        await HandleCommandError(message, await resultTask, ct);
-                        return false;
-                    }
-                case "hello":
-                    {
-                        if (CommandHandler.TryExecuteCommand<HelloCommandHandler, HelloCommandResult>(new(message.Author), ref reader, out var resultTask, ct))
-                        {
-                            var result = await resultTask;
-                            if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
+                            if (!string.IsNullOrWhiteSpace(result.Message))
                             {
                                 var mesReq = postMessageRequestPool.Get();
                                 (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
+                                await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq,cancellationToken: ct);
                                 postMessageRequestPool.Return(mesReq);
-                                return true;
                             }
-                        }
-                        await HandleCommandError(message, await resultTask, ct);
-                        return false;
-                    }
-                case "help":
-                    {
-                        if (CommandHandler.TryExecuteCommand<HelpCommandHandler, HelpCommandResult>(new(), ref reader, out var resultTask, ct))
-                        {
-                            var result = await resultTask;
-                            if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
-                            {
-                                var mesReq = postMessageRequestPool.Get();
-                                (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
-                                postMessageRequestPool.Return(mesReq);
-                                return true;
-                            }
-                        }
-                        await HandleCommandError(message, await resultTask, ct);
-                        return false;
-                    }
-                case "rmmsg":
-                    {
-                        if (CommandHandler.TryExecuteCommand<DeleteMessageCommandHandler, DeleteMessageCommandResult>(new(message.Author.Id, traq, botOptions), ref reader, out var resultTask, ct))
-                        {
-                            var result = await resultTask;
-                            if (result.IsSuccessful)
+                            else if (result.ReactionStampId is not null)
                             {
                                 var stampReq = postMessageStampRequestPool.Get();
                                 stampReq.Count = 1;
-                                await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
+                                await traq.Messages[message.Id].Stamps[result.ReactionStampId.Value].PostAsync(stampReq, cancellationToken: ct);
                                 postMessageStampRequestPool.Return(stampReq);
-                                return true;
                             }
+                            return true;
                         }
-                        await HandleCommandError(message, await resultTask, ct);
-                        return false;
                     }
-                case "status":
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
+                case "hello":
+                {
+                    if (CommandHandler.TryExecuteCommand<HelloCommandHandler, HelloCommandResult>(new(message.Author), ref reader, out var resultTask, ct))
                     {
-                        if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(healthCheckService, hostEnv), ref reader, out var resultTask, ct))
+                        var result = await resultTask;
+                        if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
                         {
-                            var result = await resultTask;
-                            if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
-                            {
-                                var mesReq = postMessageRequestPool.Get();
-                                (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
-                                postMessageRequestPool.Return(mesReq);
-                                return true;
-                            }
+                            var mesReq = postMessageRequestPool.Get();
+                            (mesReq.Content, mesReq.Embed) = (result.Message, false);
+                            await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
+                            postMessageRequestPool.Return(mesReq);
+                            return true;
                         }
-                        await HandleCommandError(message, await resultTask, ct);
-                        return false;
                     }
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
+                case "help":
+                {
+                    if (CommandHandler.TryExecuteCommand<HelpCommandHandler, HelpCommandResult>(new(), ref reader, out var resultTask, ct))
+                    {
+                        var result = await resultTask;
+                        if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
+                        {
+                            var mesReq = postMessageRequestPool.Get();
+                            (mesReq.Content, mesReq.Embed) = (result.Message, false);
+                            await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
+                            postMessageRequestPool.Return(mesReq);
+                            return true;
+                        }
+                    }
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
+                case "rmmsg":
+                {
+                    if (CommandHandler.TryExecuteCommand<DeleteMessageCommandHandler, DeleteMessageCommandResult>(new(message.Author.Id, traq, botOptions), ref reader, out var resultTask, ct))
+                    {
+                        var result = await resultTask;
+                        if (result.IsSuccessful)
+                        {
+                            var stampReq = postMessageStampRequestPool.Get();
+                            stampReq.Count = 1;
+                            await traq.Messages[message.Id].Stamps[Constants.TraqStamps.WhiteCheckMark.Id].PostAsync(stampReq, cancellationToken: ct);
+                            postMessageStampRequestPool.Return(stampReq);
+                            return true;
+                        }
+                    }
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
+                case "status":
+                {
+                    if (CommandHandler.TryExecuteCommand<StatusCommandHandler, StatusCommandResult>(new(healthCheckService, hostEnv), ref reader, out var resultTask, ct))
+                    {
+                        var result = await resultTask;
+                        if (result.IsSuccessful && !string.IsNullOrWhiteSpace(result.Message))
+                        {
+                            var mesReq = postMessageRequestPool.Get();
+                            (mesReq.Content, mesReq.Embed) = (result.Message, false);
+                            await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
+                            postMessageRequestPool.Return(mesReq);
+                            return true;
+                        }
+                    }
+                    await HandleCommandError(message, await resultTask, ct);
+                    return false;
+                }
 
                 case "join":
+                {
+                    if (reader.HasAnyArguments)
                     {
-                        if (reader.HasAnyArguments)
-                        {
-                            await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
-                            return false;
-                        }
-                        if (_botOptions.Id == Guid.Empty)
-                        {
-                            await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
-                            return false;
-                        }
-
-                        var stampReq = postMessageStampRequestPool.Get();
-                        stampReq.Count = 1;
-
-                        var joinReq = postBotActionJoinRequestPool.Get();
-                        joinReq.ChannelId = message.ChannelId;
-
-                        try
-                        {
-                            await traq.BotApi.LetBotJoinChannelAsync(_botOptions.Id, joinReq, ct);
-                            await traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.LogError(e, "Failed to join the channel.");
-                            await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
-                        }
-
-                        postMessageStampRequestPool.Return(stampReq);
-                        postBotActionJoinRequestPool.Return(joinReq);
-                        return true;
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
+                        return false;
                     }
+                    if (_botOptions.Id == Guid.Empty)
+                    {
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
+                        return false;
+                    }
+
+                    var stampReq = postMessageStampRequestPool.Get();
+                    stampReq.Count = 1;
+
+                    var joinReq = postBotActionJoinRequestPool.Get();
+                    joinReq.ChannelId = message.ChannelId;
+
+                    try
+                    {
+                        await traq.Bots[_botOptions.Id].Actions.Join.PostAsync(joinReq, cancellationToken: ct);
+                        await traq.Messages[message.Id].Stamps[Constants.TraqStamps.WhiteCheckMark.Id].PostAsync(stampReq, cancellationToken: ct);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to join the channel.");
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
+                    }
+
+                    postMessageStampRequestPool.Return(stampReq);
+                    postBotActionJoinRequestPool.Return(joinReq);
+                    return true;
+                }
                 case "leave":
+                {
+                    if (reader.HasAnyArguments)
                     {
-                        if (reader.HasAnyArguments)
-                        {
-                            await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
-                            return false;
-                        }
-                        if (_botOptions.Id == Guid.Empty)
-                        {
-                            await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
-                            return false;
-                        }
-
-                        var stampReq = postMessageStampRequestPool.Get();
-                        stampReq.Count = 1;
-
-                        var leaveReq = postBotActionLeaveRequestPool.Get();
-                        leaveReq.ChannelId = message.ChannelId;
-
-                        try
-                        {
-                            await traq.BotApi.LetBotLeaveChannelAsync(_botOptions.Id, leaveReq, ct);
-                            await traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Wave.Id, stampReq, ct);
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.LogError(e, "Failed to leave the channel.");
-                            await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
-                        }
-
-                        postMessageStampRequestPool.Return(stampReq);
-                        postBotActionLeaveRequestPool.Return(leaveReq);
-                        return true;
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InvalidArguments), ct);
+                        return false;
                     }
+                    if (_botOptions.Id == Guid.Empty)
+                    {
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError, "Bot ID is not set."), ct);
+                        return false;
+                    }
+
+                    var stampReq = postMessageStampRequestPool.Get();
+                    stampReq.Count = 1;
+
+                    var leaveReq = postBotActionLeaveRequestPool.Get();
+                    leaveReq.ChannelId = message.ChannelId;
+
+                    try
+                    {
+                        await traq.Bots[_botOptions.Id].Actions.Leave.PostAsync(leaveReq, cancellationToken: ct);
+                        await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Wave.Id].PostAsync(stampReq, cancellationToken: ct);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Failed to leave the channel.");
+                        await HandleCommandError(message, CommonCommandResult.CreateFailed(CommandErrorType.InternalError), ct);
+                    }
+
+                    postMessageStampRequestPool.Return(stampReq);
+                    postBotActionLeaveRequestPool.Return(leaveReq);
+                    return true;
+                }
             }
 
             // Unknown command
@@ -283,23 +283,23 @@ namespace BotTidus.Services.InteractiveBot
             switch (result.ErrorType)
             {
                 case CommandErrorType.InternalError:
-                    {
-                        _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
-                        await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Explosion.Id, req, ct);
-                        break;
-                    }
+                {
+                    _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
+                    await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Explosion.Id].PostAsync(req, cancellationToken: ct);
+                    break;
+                }
                 case CommandErrorType.PermissionDenied:
-                    {
-                        _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
-                        await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.NoEntrySign.Id, req, ct);
-                        break;
-                    }
+                {
+                    _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
+                    await traq.Messages[message.Id].Stamps[Constants.TraqStamps.NoEntrySign.Id].PostAsync(req, cancellationToken: ct);
+                    break;
+                }
                 default:
-                    {
-                        _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
-                        await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Question.Id, req, ct);
-                        break;
-                    }
+                {
+                    _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
+                    await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Question.Id].PostAsync(req, cancellationToken: ct);
+                    break;
+                }
             }
             postMessageStampRequestPool.Return(req);
         }
