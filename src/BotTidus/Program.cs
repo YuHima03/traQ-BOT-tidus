@@ -16,6 +16,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
+using Microsoft.Kiota.Abstractions.Authentication;
+using Microsoft.Kiota.Http.HttpClientLibrary;
 using System.Text.Json.Serialization;
 using Traq;
 
@@ -50,18 +52,24 @@ namespace BotTidus
                             throw new Exception("Command prefix must be set and be non-empty.");
                         }
                     });
-                    services.AddSingleton<IConfigureOptions<TraqApiClientOptions>>(sp => new ConfigureOptions<TraqApiClientOptions>(o =>
+
+                    services.AddSingleton(sp =>
                     {
                         var botOptions = sp.GetRequiredService<IOptions<TraqBotOptions>>().Value;
-                        o.BaseAddress = botOptions.TraqApiBaseAddress!;
-                        o.BearerAuthToken = botOptions.TraqAccessToken;
-                    }));
+                        var httpClient = new HttpClient();
+                        httpClient.DefaultRequestHeaders.Authorization = new("Bearer", botOptions.TraqAccessToken);
+                        HttpClientRequestAdapter adopter = new(new AnonymousAuthenticationProvider(), httpClient: httpClient)
+                        {
+                            BaseUrl = botOptions.TraqApiBaseAddress,
+                        };
+                        return new TraqApiClient(adopter);
+                    });
 
                     services.AddSingleton<ObjectPoolProvider, DefaultObjectPoolProvider>()
-                        .AddObjectPool<Traq.Model.PostBotActionJoinRequest>()
-                        .AddObjectPool<Traq.Model.PostBotActionLeaveRequest>()
-                        .AddObjectPool<Traq.Model.PostMessageRequest>()
-                        .AddObjectPool<Traq.Model.PostMessageStampRequest>();
+                        .AddObjectPool<Traq.Models.PostBotActionJoinRequest>()
+                        .AddObjectPool<Traq.Models.PostBotActionLeaveRequest>()
+                        .AddObjectPool<Traq.Models.PostMessageRequest>()
+                        .AddObjectPool<Traq.Models.PostMessageStampRequest>();
 
                     services.AddHealthChecks()
                         .AddMySqlWithDbContext<RepositoryImpl.Repository>()
@@ -85,8 +93,6 @@ namespace BotTidus
                         }
                     });
                     services.AddSingleton<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
-
-                    services.AddSingleton<ITraqApiClient, TraqApiClient>();
 
                     services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id));
 
