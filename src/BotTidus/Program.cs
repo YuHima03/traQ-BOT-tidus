@@ -94,7 +94,7 @@ namespace BotTidus
                     });
                     services.AddSingleton<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
 
-                    services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(ctx.Configuration[Constants.ConfigSections.DefaultTimeZoneSection] ?? TimeZoneInfo.Utc.Id));
+                    services.AddSingleton(GetDefaultTimeZoneInfo(ctx.Configuration));
 
                     services.Configure<Microsoft.Extensions.Caching.Memory.MemoryCacheOptions>(ctx.Configuration.GetSection(Constants.ConfigSections.MemoryCacheOptionsSection).Bind);
                     services.AddMemoryCache();
@@ -111,6 +111,21 @@ namespace BotTidus
 
             using CancellationTokenSource cts = new();
             await host.RunAsync(cts.Token);
+        }
+
+        static TimeZoneInfo GetDefaultTimeZoneInfo(IConfiguration configuration)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                var id = configuration[Constants.ConfigSections.DefaultTimeZoneSection];
+                return (!string.IsNullOrWhiteSpace(id) && TimeZoneInfo.TryFindSystemTimeZoneById(id, out var tzi)) ? tzi : TimeZoneInfo.Utc;
+            }
+            else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            {
+                var id = configuration[Constants.ConfigSections.DefaultTimeZoneIanaSection];
+                return (!string.IsNullOrWhiteSpace(id) && TimeZoneInfo.TryFindSystemTimeZoneById(id, out var tzi)) ? tzi : TimeZoneInfo.Utc;
+            }
+            return TimeZoneInfo.Utc;
         }
     }
 

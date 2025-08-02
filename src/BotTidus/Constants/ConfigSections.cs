@@ -7,5 +7,7 @@
         public const string MemoryCacheOptionsSection = "Cache:Memory";
 
         public const string DefaultTimeZoneSection = "TimeZone:Default";
+
+        public const string DefaultTimeZoneIanaSection = "TimeZone:DefaultIana";
     }
 }
