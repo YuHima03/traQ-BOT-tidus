@@ -31,7 +31,7 @@ namespace BotTidus.Services.ExternalServiceHealthCheck
                 publisher.LastCheckedAt = DateTimeOffset.UtcNow;
                 try
                 {
-                    _ = await traq.Users.Me.GetAsync(cancellationToken: stoppingToken) ?? throw new Exception("The API response is null");
+                    _ = await traq.Users.Me.GetAsync(cancellationToken: stoppingToken) ?? throw new Exception("Health check failed: traQ API '/users/me' response was null.");
                     publisher.CurrentStatus = TraqStatus.Available;
                 }
                 catch (Exception ex)
