@@ -1,12 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BotTidus.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace BotTidus.Infrastructure.Repository;
 
-public partial class BotDbContext(DbContextOptions<BotDbContext> options) : DbContext(options)
+public partial class BotDbContext(DbContextOptions<BotDbContext> options) : DbContext(options), IRepository
 {
-    public virtual DbSet<DiscordWebhook> DiscordWebhooks { get; set; }
+    public virtual DbSet<DiscordWebhook_Repo> DiscordWebhooks { get; set; }
 
-    public virtual DbSet<MessageFaceScore> MessageFaceScores { get; set; }
+    public virtual DbSet<MessageFaceScore_Repo> MessageFaceScores { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -14,7 +15,7 @@ public partial class BotDbContext(DbContextOptions<BotDbContext> options) : DbCo
             .UseCollation("utf8mb4_uca1400_ai_ci")
             .HasCharSet("utf8mb4");
 
-        modelBuilder.Entity<DiscordWebhook>(entity =>
+        modelBuilder.Entity<DiscordWebhook_Repo>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
@@ -25,7 +26,7 @@ public partial class BotDbContext(DbContextOptions<BotDbContext> options) : DbCo
                 .HasDefaultValueSql("current_timestamp()");
         });
 
-        modelBuilder.Entity<MessageFaceScore>(entity =>
+        modelBuilder.Entity<MessageFaceScore_Repo>(entity =>
         {
             entity.HasKey(e => e.MessageId).HasName("PRIMARY");
 
@@ -35,6 +36,16 @@ public partial class BotDbContext(DbContextOptions<BotDbContext> options) : DbCo
                 .ValueGeneratedOnAddOrUpdate()
                 .HasDefaultValueSql("current_timestamp()");
             entity.Property(e => e.UserId).HasComment("message author user uuid");
+        });
+
+        modelBuilder.Entity<Domain.MessageFaceScores.UserFaceCount>(builder =>
+        {
+            builder.HasNoKey();
+            builder.Property(e => e.UserId);
+            builder.Property(e => e.NegativePhraseCount);
+            builder.Property(e => e.NegativeReactionCount);
+            builder.Property(e => e.PositivePhraseCount);
+            builder.Property(e => e.PositiveReactionCount);
         });
 
         OnModelCreatingPartial(modelBuilder);
