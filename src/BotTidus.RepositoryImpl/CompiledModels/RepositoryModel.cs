@@ -34,7 +34,7 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             }
 
             model.Customize();
-            _instance = model;
+            _instance = (RepositoryModel)model.FinalizeModel();
         }
 
         private static RepositoryModel _instance;

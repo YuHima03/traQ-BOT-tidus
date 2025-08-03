@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Update.Internal;
 
 #pragma warning disable 219, 612, 618
 #nullable disable
@@ -13,6 +14,11 @@ namespace BotTidus.RepositoryImpl.CompiledModels
 {
     public partial class RepositoryModel
     {
+        private RepositoryModel()
+            : base(skipDetectChanges: false, modelId: new Guid("0b85acb7-620b-4eb1-8f51-49e35852ce21"), entityTypeCount: 3)
+        {
+        }
+
         partial void Initialize()
         {
             var discordWebhook = DiscordWebhookEntityType.Create(this);
@@ -24,9 +30,9 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             RepoUserFaceCountEntityType.CreateAnnotations(repoUserFaceCount);
 
             AddAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn);
-            AddAnnotation("ProductVersion", "8.0.18");
+            AddAnnotation("ProductVersion", "9.0.7");
             AddAnnotation("Relational:MaxIdentifierLength", 64);
-            AddRuntimeAnnotation("Relational:RelationalModel", CreateRelationalModel());
+            AddRuntimeAnnotation("Relational:RelationalModelFactory", () => CreateRelationalModel());
         }
 
         private IRelationalModel CreateRelationalModel()
@@ -56,7 +62,7 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             var user_idColumnBase = new ColumnBase<ColumnMappingBase>("user_id", "char(36)", botTidusRepositoryImplModelsDiscordWebhookTableBase);
             botTidusRepositoryImplModelsDiscordWebhookTableBase.Columns.Add("user_id", user_idColumnBase);
             relationalModel.DefaultTables.Add("BotTidus.RepositoryImpl.Models.DiscordWebhook", botTidusRepositoryImplModelsDiscordWebhookTableBase);
-            var botTidusRepositoryImplModelsDiscordWebhookMappingBase = new TableMappingBase<ColumnMappingBase>(discordWebhook, botTidusRepositoryImplModelsDiscordWebhookTableBase, true);
+            var botTidusRepositoryImplModelsDiscordWebhookMappingBase = new TableMappingBase<ColumnMappingBase>(discordWebhook, botTidusRepositoryImplModelsDiscordWebhookTableBase, null);
             botTidusRepositoryImplModelsDiscordWebhookTableBase.AddTypeMapping(botTidusRepositoryImplModelsDiscordWebhookMappingBase, false);
             defaultTableMappings.Add(botTidusRepositoryImplModelsDiscordWebhookMappingBase);
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)idColumnBase, discordWebhook.FindProperty("Id")!, botTidusRepositoryImplModelsDiscordWebhookMappingBase);
@@ -72,31 +78,30 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             var discord_webhooksTable = new Table("discord_webhooks", null, relationalModel);
             var idColumn = new Column("id", "char(36)", discord_webhooksTable);
             discord_webhooksTable.Columns.Add("id", idColumn);
+            idColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<Guid>(idColumn);
             var created_atColumn = new Column("created_at", "datetime(6)", discord_webhooksTable);
             discord_webhooksTable.Columns.Add("created_at", created_atColumn);
+            created_atColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<DateTime>(created_atColumn);
             var is_enabledColumn = new Column("is_enabled", "tinyint(1)", discord_webhooksTable);
             discord_webhooksTable.Columns.Add("is_enabled", is_enabledColumn);
+            is_enabledColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<bool>(is_enabledColumn);
             var notifies_on_flagsColumn = new Column("notifies_on_flags", "int", discord_webhooksTable);
             discord_webhooksTable.Columns.Add("notifies_on_flags", notifies_on_flagsColumn);
+            notifies_on_flagsColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<int>(notifies_on_flagsColumn);
             var post_urlColumn = new Column("post_url", "longtext", discord_webhooksTable)
             {
                 IsNullable = true
             };
             discord_webhooksTable.Columns.Add("post_url", post_urlColumn);
+            post_urlColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<string>(post_urlColumn);
             var updated_atColumn = new Column("updated_at", "datetime(6)", discord_webhooksTable);
             discord_webhooksTable.Columns.Add("updated_at", updated_atColumn);
+            updated_atColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<DateTime>(updated_atColumn);
             var user_idColumn = new Column("user_id", "char(36)", discord_webhooksTable);
             discord_webhooksTable.Columns.Add("user_id", user_idColumn);
-            var pK_discord_webhooks = new UniqueConstraint("PK_discord_webhooks", discord_webhooksTable, new[] { idColumn });
-            discord_webhooksTable.PrimaryKey = pK_discord_webhooks;
-            var pK_discord_webhooksUc = RelationalModel.GetKey(this,
-                "BotTidus.RepositoryImpl.Models.DiscordWebhook",
-                new[] { "Id" });
-            pK_discord_webhooks.MappedKeys.Add(pK_discord_webhooksUc);
-            RelationalModel.GetOrCreateUniqueConstraints(pK_discord_webhooksUc).Add(pK_discord_webhooks);
-            discord_webhooksTable.UniqueConstraints.Add("PK_discord_webhooks", pK_discord_webhooks);
+            user_idColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<Guid>(user_idColumn);
             relationalModel.Tables.Add(("discord_webhooks", null), discord_webhooksTable);
-            var discord_webhooksTableMapping = new TableMapping(discordWebhook, discord_webhooksTable, true);
+            var discord_webhooksTableMapping = new TableMapping(discordWebhook, discord_webhooksTable, null);
             discord_webhooksTable.AddTypeMapping(discord_webhooksTableMapping, false);
             tableMappings.Add(discord_webhooksTableMapping);
             RelationalModel.CreateColumnMapping(idColumn, discordWebhook.FindProperty("Id")!, discord_webhooksTableMapping);
@@ -106,6 +111,15 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             RelationalModel.CreateColumnMapping(post_urlColumn, discordWebhook.FindProperty("PostUrl")!, discord_webhooksTableMapping);
             RelationalModel.CreateColumnMapping(updated_atColumn, discordWebhook.FindProperty("UpdatedAt")!, discord_webhooksTableMapping);
             RelationalModel.CreateColumnMapping(user_idColumn, discordWebhook.FindProperty("UserId")!, discord_webhooksTableMapping);
+            var pK_discord_webhooks = new UniqueConstraint("PK_discord_webhooks", discord_webhooksTable, new[] { idColumn });
+            discord_webhooksTable.PrimaryKey = pK_discord_webhooks;
+            pK_discord_webhooks.SetRowKeyValueFactory(new SimpleRowKeyValueFactory<Guid>(pK_discord_webhooks));
+            var pK_discord_webhooksKey = RelationalModel.GetKey(this,
+                "BotTidus.RepositoryImpl.Models.DiscordWebhook",
+                new[] { "Id" });
+            pK_discord_webhooks.MappedKeys.Add(pK_discord_webhooksKey);
+            RelationalModel.GetOrCreateUniqueConstraints(pK_discord_webhooksKey).Add(pK_discord_webhooks);
+            discord_webhooksTable.UniqueConstraints.Add("PK_discord_webhooks", pK_discord_webhooks);
 
             var messageFaceScore = FindEntityType("BotTidus.RepositoryImpl.Models.MessageFaceScore")!;
 
@@ -129,7 +143,7 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             var user_idColumnBase0 = new ColumnBase<ColumnMappingBase>("user_id", "char(36)", botTidusRepositoryImplModelsMessageFaceScoreTableBase);
             botTidusRepositoryImplModelsMessageFaceScoreTableBase.Columns.Add("user_id", user_idColumnBase0);
             relationalModel.DefaultTables.Add("BotTidus.RepositoryImpl.Models.MessageFaceScore", botTidusRepositoryImplModelsMessageFaceScoreTableBase);
-            var botTidusRepositoryImplModelsMessageFaceScoreMappingBase = new TableMappingBase<ColumnMappingBase>(messageFaceScore, botTidusRepositoryImplModelsMessageFaceScoreTableBase, true);
+            var botTidusRepositoryImplModelsMessageFaceScoreMappingBase = new TableMappingBase<ColumnMappingBase>(messageFaceScore, botTidusRepositoryImplModelsMessageFaceScoreTableBase, null);
             botTidusRepositoryImplModelsMessageFaceScoreTableBase.AddTypeMapping(botTidusRepositoryImplModelsMessageFaceScoreMappingBase, false);
             defaultTableMappings0.Add(botTidusRepositoryImplModelsMessageFaceScoreMappingBase);
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)message_idColumnBase, messageFaceScore.FindProperty("MessageId")!, botTidusRepositoryImplModelsMessageFaceScoreMappingBase);
@@ -146,30 +160,30 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             var message_face_scoresTable = new Table("message_face_scores", null, relationalModel);
             var message_idColumn = new Column("message_id", "char(36)", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("message_id", message_idColumn);
+            message_idColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<Guid>(message_idColumn);
             var created_atColumn0 = new Column("created_at", "datetime(6)", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("created_at", created_atColumn0);
+            created_atColumn0.Accessors = ColumnAccessorsFactory.CreateGeneric<DateTime>(created_atColumn0);
             var negative_phrase_countColumn = new Column("negative_phrase_count", "int unsigned", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("negative_phrase_count", negative_phrase_countColumn);
+            negative_phrase_countColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(negative_phrase_countColumn);
             var negative_reaction_countColumn = new Column("negative_reaction_count", "int unsigned", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("negative_reaction_count", negative_reaction_countColumn);
+            negative_reaction_countColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(negative_reaction_countColumn);
             var positive_phrase_countColumn = new Column("positive_phrase_count", "int unsigned", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("positive_phrase_count", positive_phrase_countColumn);
+            positive_phrase_countColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(positive_phrase_countColumn);
             var positive_reaction_countColumn = new Column("positive_reaction_count", "int unsigned", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("positive_reaction_count", positive_reaction_countColumn);
+            positive_reaction_countColumn.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(positive_reaction_countColumn);
             var updated_atColumn0 = new Column("updated_at", "datetime(6)", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("updated_at", updated_atColumn0);
+            updated_atColumn0.Accessors = ColumnAccessorsFactory.CreateGeneric<DateTime>(updated_atColumn0);
             var user_idColumn0 = new Column("user_id", "char(36)", message_face_scoresTable);
             message_face_scoresTable.Columns.Add("user_id", user_idColumn0);
-            var pK_message_face_scores = new UniqueConstraint("PK_message_face_scores", message_face_scoresTable, new[] { message_idColumn });
-            message_face_scoresTable.PrimaryKey = pK_message_face_scores;
-            var pK_message_face_scoresUc = RelationalModel.GetKey(this,
-                "BotTidus.RepositoryImpl.Models.MessageFaceScore",
-                new[] { "MessageId" });
-            pK_message_face_scores.MappedKeys.Add(pK_message_face_scoresUc);
-            RelationalModel.GetOrCreateUniqueConstraints(pK_message_face_scoresUc).Add(pK_message_face_scores);
-            message_face_scoresTable.UniqueConstraints.Add("PK_message_face_scores", pK_message_face_scores);
+            user_idColumn0.Accessors = ColumnAccessorsFactory.CreateGeneric<Guid>(user_idColumn0);
             relationalModel.Tables.Add(("message_face_scores", null), message_face_scoresTable);
-            var message_face_scoresTableMapping = new TableMapping(messageFaceScore, message_face_scoresTable, true);
+            var message_face_scoresTableMapping = new TableMapping(messageFaceScore, message_face_scoresTable, null);
             message_face_scoresTable.AddTypeMapping(message_face_scoresTableMapping, false);
             tableMappings0.Add(message_face_scoresTableMapping);
             RelationalModel.CreateColumnMapping(message_idColumn, messageFaceScore.FindProperty("MessageId")!, message_face_scoresTableMapping);
@@ -180,6 +194,15 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             RelationalModel.CreateColumnMapping(positive_reaction_countColumn, messageFaceScore.FindProperty("PositiveReactionCount")!, message_face_scoresTableMapping);
             RelationalModel.CreateColumnMapping(updated_atColumn0, messageFaceScore.FindProperty("UpdatedAt")!, message_face_scoresTableMapping);
             RelationalModel.CreateColumnMapping(user_idColumn0, messageFaceScore.FindProperty("UserId")!, message_face_scoresTableMapping);
+            var pK_message_face_scores = new UniqueConstraint("PK_message_face_scores", message_face_scoresTable, new[] { message_idColumn });
+            message_face_scoresTable.PrimaryKey = pK_message_face_scores;
+            pK_message_face_scores.SetRowKeyValueFactory(new SimpleRowKeyValueFactory<Guid>(pK_message_face_scores));
+            var pK_message_face_scoresKey = RelationalModel.GetKey(this,
+                "BotTidus.RepositoryImpl.Models.MessageFaceScore",
+                new[] { "MessageId" });
+            pK_message_face_scores.MappedKeys.Add(pK_message_face_scoresKey);
+            RelationalModel.GetOrCreateUniqueConstraints(pK_message_face_scoresKey).Add(pK_message_face_scores);
+            message_face_scoresTable.UniqueConstraints.Add("PK_message_face_scores", pK_message_face_scores);
 
             var repoUserFaceCount = FindEntityType("BotTidus.RepositoryImpl.Models.RepoUserFaceCount")!;
 
@@ -195,7 +218,7 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             var positive_reaction_countColumnBase0 = new ColumnBase<ColumnMappingBase>("positive_reaction_count", "int unsigned", botTidusRepositoryImplModelsRepoUserFaceCountTableBase);
             botTidusRepositoryImplModelsRepoUserFaceCountTableBase.Columns.Add("positive_reaction_count", positive_reaction_countColumnBase0);
             relationalModel.DefaultTables.Add("BotTidus.RepositoryImpl.Models.RepoUserFaceCount", botTidusRepositoryImplModelsRepoUserFaceCountTableBase);
-            var botTidusRepositoryImplModelsRepoUserFaceCountMappingBase = new TableMappingBase<ColumnMappingBase>(repoUserFaceCount, botTidusRepositoryImplModelsRepoUserFaceCountTableBase, true);
+            var botTidusRepositoryImplModelsRepoUserFaceCountMappingBase = new TableMappingBase<ColumnMappingBase>(repoUserFaceCount, botTidusRepositoryImplModelsRepoUserFaceCountTableBase, null);
             botTidusRepositoryImplModelsRepoUserFaceCountTableBase.AddTypeMapping(botTidusRepositoryImplModelsRepoUserFaceCountMappingBase, false);
             defaultTableMappings1.Add(botTidusRepositoryImplModelsRepoUserFaceCountMappingBase);
             RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)negative_phrase_countColumnBase0, repoUserFaceCount.FindProperty("NegativePhraseCount")!, botTidusRepositoryImplModelsRepoUserFaceCountMappingBase);
@@ -208,14 +231,18 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             var repoUserFaceCountTable = new Table("RepoUserFaceCount", null, relationalModel);
             var negative_phrase_countColumn0 = new Column("negative_phrase_count", "int unsigned", repoUserFaceCountTable);
             repoUserFaceCountTable.Columns.Add("negative_phrase_count", negative_phrase_countColumn0);
+            negative_phrase_countColumn0.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(negative_phrase_countColumn0);
             var negative_reaction_countColumn0 = new Column("negative_reaction_count", "int unsigned", repoUserFaceCountTable);
             repoUserFaceCountTable.Columns.Add("negative_reaction_count", negative_reaction_countColumn0);
+            negative_reaction_countColumn0.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(negative_reaction_countColumn0);
             var positive_phrase_countColumn0 = new Column("positive_phrase_count", "int unsigned", repoUserFaceCountTable);
             repoUserFaceCountTable.Columns.Add("positive_phrase_count", positive_phrase_countColumn0);
+            positive_phrase_countColumn0.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(positive_phrase_countColumn0);
             var positive_reaction_countColumn0 = new Column("positive_reaction_count", "int unsigned", repoUserFaceCountTable);
             repoUserFaceCountTable.Columns.Add("positive_reaction_count", positive_reaction_countColumn0);
+            positive_reaction_countColumn0.Accessors = ColumnAccessorsFactory.CreateGeneric<uint>(positive_reaction_countColumn0);
             relationalModel.Tables.Add(("RepoUserFaceCount", null), repoUserFaceCountTable);
-            var repoUserFaceCountTableMapping = new TableMapping(repoUserFaceCount, repoUserFaceCountTable, true);
+            var repoUserFaceCountTableMapping = new TableMapping(repoUserFaceCount, repoUserFaceCountTable, null);
             repoUserFaceCountTable.AddTypeMapping(repoUserFaceCountTableMapping, false);
             tableMappings1.Add(repoUserFaceCountTableMapping);
             RelationalModel.CreateColumnMapping(negative_phrase_countColumn0, repoUserFaceCount.FindProperty("NegativePhraseCount")!, repoUserFaceCountTableMapping);
