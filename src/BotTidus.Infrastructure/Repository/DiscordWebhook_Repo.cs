@@ -9,7 +9,7 @@ namespace BotTidus.Infrastructure.Repository;
 [Table("discord_webhooks")]
 [Index("IsEnabled", Name = "is_enabled")]
 [Index("UserId", Name = "user_id")]
-public partial class DiscordWebhook
+public partial class DiscordWebhook_Repo
 {
     [Key]
     [Column("id")]

@@ -8,7 +8,7 @@ namespace BotTidus.Infrastructure.Repository;
 
 [Table("message_face_scores")]
 [Index("UserId", Name = "idx_user")]
-public partial class MessageFaceScore
+public partial class MessageFaceScore_Repo
 {
     /// <summary>
     /// message uuid
