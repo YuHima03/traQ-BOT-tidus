@@ -114,7 +114,8 @@ namespace BotTidus.Helpers
             }
             var task = users.GetAsync(conf => conf.QueryParameters.Name = name, ct).ContinueWith(t => t.Result?.SingleOrDefault()?.Id ?? Guid.Empty);
             resultTask = new(task);
-            return new(task.ContinueWith(t => {
+            return new(task.ContinueWith(t =>
+            {
                 var id = t.Result;
                 if (id == Guid.Empty)
                 {

@@ -61,7 +61,7 @@ namespace BotTidus.Helpers
                 Offset = 0,
                 SortAsGetSortQueryParameterType = null
             };
-            List<Traq.Models.Message> result = [];            
+            List<Traq.Models.Message> result = [];
             for (int requestCount = 0; requestCount < MaxSearchMessageLimit / 100; requestCount++)
             {
                 var reqRes = await messages.GetAsMessagesGetResponseAsync(conf => conf.QueryParameters = queryParams, ct);
