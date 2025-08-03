@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace BotTidus.RepositoryImpl.Models
 {
     [Table("message_face_scores")]
-    sealed class MessageFaceScore
+    public sealed class MessageFaceScore
     {
         [Column("message_id")]
         [Key]

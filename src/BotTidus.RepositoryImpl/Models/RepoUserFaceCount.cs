@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace BotTidus.RepositoryImpl.Models
 {
     [Keyless]
-    internal class RepoUserFaceCount
+    public sealed class RepoUserFaceCount
     {
         [Column("negative_phrase_count")]
         public uint NegativePhraseCount { get; set; }
