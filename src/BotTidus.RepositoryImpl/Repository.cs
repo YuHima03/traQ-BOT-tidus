@@ -8,5 +8,11 @@ namespace BotTidus.RepositoryImpl
         DbSet<Models.MessageFaceScore> MessageFaceScores { get; set; }
 
         DbSet<Models.DiscordWebhook> DiscordWebhooks { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Models.RepoUserFaceCount>();
+        }
     }
 }
