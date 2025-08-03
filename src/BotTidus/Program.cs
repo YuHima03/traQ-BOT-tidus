@@ -92,6 +92,7 @@ namespace BotTidus
                             ob.EnableSensitiveDataLogging();
                         }
                     });
+                    services.AddSingleton<IRepositoryFactory, Infrastructure.Repository.BotDbContextDefaultFactory>();
 
                     services.AddSingleton(GetDefaultTimeZoneInfo(ctx.Configuration));
 
