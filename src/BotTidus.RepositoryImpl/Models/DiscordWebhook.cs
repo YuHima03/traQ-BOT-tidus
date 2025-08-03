@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace BotTidus.RepositoryImpl.Models
 {
     [Table("discord_webhooks")]
-    internal class DiscordWebhook
+    public sealed class DiscordWebhook
     {
         [Key]
         [Column("id")]
