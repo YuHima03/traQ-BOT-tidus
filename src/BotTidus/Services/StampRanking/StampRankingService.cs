@@ -5,14 +5,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text;
 using Traq;
-using Traq.Model;
+using Traq.Models;
 
 namespace BotTidus.Services.StampRanking
 {
     internal class StampRankingService(
         ILogger<StampRankingService> logger,
         IOptions<StampRankingServiceOptions> options,
-        ITraqApiClient traq,
+        TraqApiClient traq,
         TimeZoneInfo timeZoneInfo,
         IServiceProvider services
         )
@@ -30,10 +30,13 @@ namespace BotTidus.Services.StampRanking
             return Task.FromResult(HealthCheckResult.Healthy());
         }
 
-        protected override async ValueTask OnCollectAsync(Message[] messages, CancellationToken ct)
+        protected override async ValueTask OnCollectAsync(IList<Message> messages, CancellationToken ct)
         {
-            var stampNameMap = (await traq.StampApi.GetStampsAsync(cancellationToken: ct)).ToDictionary(s => s.Id, s => s.Name);
-            var stampCount = messages.SelectMany(m => m.Stamps).GroupBy(s => s.StampId).ToDictionary(g => g.Key, ms => ms.Sum(s => s.Count));
+            var stampNameMap = (await traq.Stamps.GetAsync(cancellationToken: ct) ?? []).ToDictionary(s => s.Id!.Value, s => s.Name!);
+            var stampCount = messages.SelectMany(m => m.Stamps ?? [])
+                .Where(s => s.StampId.HasValue)!
+                .GroupBy(s => s.StampId!.Value)
+                .ToDictionary(g => g.Key, ms => ms.Sum(s => s.Count ?? 0));
             var top50stamps = stampCount.OrderByDescending(kv => kv.Value).TakeWhile(kv => kv.Value > 0).Take(50);
 
             var yesterday = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneInfo).Date.AddDays(-1);
@@ -60,7 +63,7 @@ namespace BotTidus.Services.StampRanking
                 rank++;
             }
 
-            await traq.MessageApi.PostMessageAsync(_postChannelId, new PostMessageRequest(sb.ToString(), false), ct);
+            await traq.Channels[_postChannelId].Messages.PostAsync(new() { Content = sb.ToString(), Embed = false }, null, ct);
         }
     }
 

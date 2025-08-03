@@ -10,7 +10,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
     /// /rmmsg &lt;MESSAGE_ID&gt;
     /// </code>
     /// </summary>
-    sealed class DeleteMessageCommandHandler(Guid senderId, ITraqApiClient traq, IOptions<TraqBotOptions> botOptions) : IAsyncConsoleCommandHandler<DeleteMessageCommandResult>
+    sealed class DeleteMessageCommandHandler(Guid senderId, TraqApiClient traq, IOptions<TraqBotOptions> botOptions) : IAsyncConsoleCommandHandler<DeleteMessageCommandResult>
     {
         Guid _messageId;
 
@@ -37,7 +37,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                         ErrorType = CommandErrorType.InvalidArguments
                     };
                 }
-                await traq.MessageApi.DeleteMessageAsync(_messageId, cancellationToken);
+                await traq.Messages[_messageId].DeleteAsync(cancellationToken: cancellationToken);
                 return new DeleteMessageCommandResult { IsSuccessful = true };
             }
             catch (Exception e)

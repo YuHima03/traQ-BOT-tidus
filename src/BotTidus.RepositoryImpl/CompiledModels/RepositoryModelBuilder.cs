@@ -17,9 +17,11 @@ namespace BotTidus.RepositoryImpl.CompiledModels
         {
             var discordWebhook = DiscordWebhookEntityType.Create(this);
             var messageFaceScore = MessageFaceScoreEntityType.Create(this);
+            var repoUserFaceCount = RepoUserFaceCountEntityType.Create(this);
 
             DiscordWebhookEntityType.CreateAnnotations(discordWebhook);
             MessageFaceScoreEntityType.CreateAnnotations(messageFaceScore);
+            RepoUserFaceCountEntityType.CreateAnnotations(repoUserFaceCount);
 
             AddAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn);
             AddAnnotation("ProductVersion", "8.0.18");
@@ -178,6 +180,48 @@ namespace BotTidus.RepositoryImpl.CompiledModels
             RelationalModel.CreateColumnMapping(positive_reaction_countColumn, messageFaceScore.FindProperty("PositiveReactionCount")!, message_face_scoresTableMapping);
             RelationalModel.CreateColumnMapping(updated_atColumn0, messageFaceScore.FindProperty("UpdatedAt")!, message_face_scoresTableMapping);
             RelationalModel.CreateColumnMapping(user_idColumn0, messageFaceScore.FindProperty("UserId")!, message_face_scoresTableMapping);
+
+            var repoUserFaceCount = FindEntityType("BotTidus.RepositoryImpl.Models.RepoUserFaceCount")!;
+
+            var defaultTableMappings1 = new List<TableMappingBase<ColumnMappingBase>>();
+            repoUserFaceCount.SetRuntimeAnnotation("Relational:DefaultMappings", defaultTableMappings1);
+            var botTidusRepositoryImplModelsRepoUserFaceCountTableBase = new TableBase("BotTidus.RepositoryImpl.Models.RepoUserFaceCount", null, relationalModel);
+            var negative_phrase_countColumnBase0 = new ColumnBase<ColumnMappingBase>("negative_phrase_count", "int unsigned", botTidusRepositoryImplModelsRepoUserFaceCountTableBase);
+            botTidusRepositoryImplModelsRepoUserFaceCountTableBase.Columns.Add("negative_phrase_count", negative_phrase_countColumnBase0);
+            var negative_reaction_countColumnBase0 = new ColumnBase<ColumnMappingBase>("negative_reaction_count", "int unsigned", botTidusRepositoryImplModelsRepoUserFaceCountTableBase);
+            botTidusRepositoryImplModelsRepoUserFaceCountTableBase.Columns.Add("negative_reaction_count", negative_reaction_countColumnBase0);
+            var positive_phrase_countColumnBase0 = new ColumnBase<ColumnMappingBase>("positive_phrase_count", "int unsigned", botTidusRepositoryImplModelsRepoUserFaceCountTableBase);
+            botTidusRepositoryImplModelsRepoUserFaceCountTableBase.Columns.Add("positive_phrase_count", positive_phrase_countColumnBase0);
+            var positive_reaction_countColumnBase0 = new ColumnBase<ColumnMappingBase>("positive_reaction_count", "int unsigned", botTidusRepositoryImplModelsRepoUserFaceCountTableBase);
+            botTidusRepositoryImplModelsRepoUserFaceCountTableBase.Columns.Add("positive_reaction_count", positive_reaction_countColumnBase0);
+            relationalModel.DefaultTables.Add("BotTidus.RepositoryImpl.Models.RepoUserFaceCount", botTidusRepositoryImplModelsRepoUserFaceCountTableBase);
+            var botTidusRepositoryImplModelsRepoUserFaceCountMappingBase = new TableMappingBase<ColumnMappingBase>(repoUserFaceCount, botTidusRepositoryImplModelsRepoUserFaceCountTableBase, true);
+            botTidusRepositoryImplModelsRepoUserFaceCountTableBase.AddTypeMapping(botTidusRepositoryImplModelsRepoUserFaceCountMappingBase, false);
+            defaultTableMappings1.Add(botTidusRepositoryImplModelsRepoUserFaceCountMappingBase);
+            RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)negative_phrase_countColumnBase0, repoUserFaceCount.FindProperty("NegativePhraseCount")!, botTidusRepositoryImplModelsRepoUserFaceCountMappingBase);
+            RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)negative_reaction_countColumnBase0, repoUserFaceCount.FindProperty("NegativeReactionCount")!, botTidusRepositoryImplModelsRepoUserFaceCountMappingBase);
+            RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)positive_phrase_countColumnBase0, repoUserFaceCount.FindProperty("PositivePhraseCount")!, botTidusRepositoryImplModelsRepoUserFaceCountMappingBase);
+            RelationalModel.CreateColumnMapping((ColumnBase<ColumnMappingBase>)positive_reaction_countColumnBase0, repoUserFaceCount.FindProperty("PositiveReactionCount")!, botTidusRepositoryImplModelsRepoUserFaceCountMappingBase);
+
+            var tableMappings1 = new List<TableMapping>();
+            repoUserFaceCount.SetRuntimeAnnotation("Relational:TableMappings", tableMappings1);
+            var repoUserFaceCountTable = new Table("RepoUserFaceCount", null, relationalModel);
+            var negative_phrase_countColumn0 = new Column("negative_phrase_count", "int unsigned", repoUserFaceCountTable);
+            repoUserFaceCountTable.Columns.Add("negative_phrase_count", negative_phrase_countColumn0);
+            var negative_reaction_countColumn0 = new Column("negative_reaction_count", "int unsigned", repoUserFaceCountTable);
+            repoUserFaceCountTable.Columns.Add("negative_reaction_count", negative_reaction_countColumn0);
+            var positive_phrase_countColumn0 = new Column("positive_phrase_count", "int unsigned", repoUserFaceCountTable);
+            repoUserFaceCountTable.Columns.Add("positive_phrase_count", positive_phrase_countColumn0);
+            var positive_reaction_countColumn0 = new Column("positive_reaction_count", "int unsigned", repoUserFaceCountTable);
+            repoUserFaceCountTable.Columns.Add("positive_reaction_count", positive_reaction_countColumn0);
+            relationalModel.Tables.Add(("RepoUserFaceCount", null), repoUserFaceCountTable);
+            var repoUserFaceCountTableMapping = new TableMapping(repoUserFaceCount, repoUserFaceCountTable, true);
+            repoUserFaceCountTable.AddTypeMapping(repoUserFaceCountTableMapping, false);
+            tableMappings1.Add(repoUserFaceCountTableMapping);
+            RelationalModel.CreateColumnMapping(negative_phrase_countColumn0, repoUserFaceCount.FindProperty("NegativePhraseCount")!, repoUserFaceCountTableMapping);
+            RelationalModel.CreateColumnMapping(negative_reaction_countColumn0, repoUserFaceCount.FindProperty("NegativeReactionCount")!, repoUserFaceCountTableMapping);
+            RelationalModel.CreateColumnMapping(positive_phrase_countColumn0, repoUserFaceCount.FindProperty("PositivePhraseCount")!, repoUserFaceCountTableMapping);
+            RelationalModel.CreateColumnMapping(positive_reaction_countColumn0, repoUserFaceCount.FindProperty("PositiveReactionCount")!, repoUserFaceCountTableMapping);
             return relationalModel.MakeReadOnly();
         }
     }

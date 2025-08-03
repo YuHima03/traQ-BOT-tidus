@@ -9,13 +9,13 @@ using System.Net.Http.Json;
 using System.Text;
 using Traq;
 using Traq.Extensions.Messages;
-using Traq.Model;
+using Traq.Models;
 
 namespace BotTidus.Services.DiscordWebhook
 {
     internal class DiscordWebhookService(
         IRepositoryFactory repositoryFactory,
-        ITraqApiClient traq,
+        TraqApiClient traq,
         IOptions<TraqBotOptions> botOptions,
         IMemoryCache cache,
         ILogger<DiscordWebhookService> logger,
@@ -45,7 +45,7 @@ namespace BotTidus.Services.DiscordWebhook
             HashSet<Guid> mentionedUsers = [];
             HashSet<Guid> mentionedGroups = [];
             HashSet<Guid> citedUsers = [];
-            List<Task<Message>> citedMessageTasks = [];
+            List<Task<Message?>> citedMessageTasks = [];
             foreach (var msg in messages)
             {
                 mentionedUsers.Clear();
@@ -53,7 +53,7 @@ namespace BotTidus.Services.DiscordWebhook
                 citedUsers.Clear();
                 citedMessageTasks.Clear();
 
-                var content = msg.Content;
+                var content = msg.Content ?? string.Empty;
                 StringBuilder plainTextBuilder = new(content.Length);
 
                 using (MessageElementEnumerator elements = new(content))
@@ -91,7 +91,7 @@ namespace BotTidus.Services.DiscordWebhook
                                     && uriString[^45..^37] == "messages"
                                     && Guid.TryParse(uriString[^36..], out var msgId))
                                 {
-                                    citedMessageTasks.Add(traq.MessageApi.GetMessageAsync(msgId, ct));
+                                    citedMessageTasks.Add(traq.Messages[msgId].GetAsync(null, ct));
                                 }
                                 plainTextBuilder.Append(uri.OriginalString);
                             }
@@ -111,7 +111,7 @@ namespace BotTidus.Services.DiscordWebhook
                 {
                     try
                     {
-                        citedUsers.Add((await cited).UserId);
+                        citedUsers.Add((await cited)!.UserId!.Value);
                     }
                     catch (Exception ex)
                     {
@@ -119,9 +119,9 @@ namespace BotTidus.Services.DiscordWebhook
                     }
                 }
 
-                var authorName = await traq.UserApi.GetCachedUserNameAsync(msg.UserId, cache, ct);
+                var authorName = await traq.Users.GetCachedUserNameAsync(msg.UserId!.Value, cache, ct);
                 var authorIconUrl = Uri.TryCreate($"{_botOptions.TraqApiBaseAddress.AsSpan().TrimEnd('/')}/public/icon/{Uri.EscapeDataString(authorName)}", UriKind.Absolute, out var _uri) ? _uri : null;
-                var channelPath = await traq.ChannelApi.TryGetCachedChannelPathAsync(msg.ChannelId, cache, ct);
+                var channelPath = await traq.Channels.TryGetCachedChannelPathAsync(msg.ChannelId!.Value, cache, ct);
                 DiscordWebhookMessage.Embed whEmbed = new()
                 {
                     Author = new()
@@ -147,7 +147,7 @@ namespace BotTidus.Services.DiscordWebhook
                 foreach (var g in userWebhooks)
                 {
                     var userId = g.Key;
-                    var userDetail = await traq.UserApi.GetCachedUserAsync(userId, cache, ct);
+                    var userDetail = await traq.Users.GetCachedUserAsync(userId, cache, ct);
                     foreach (var w in g)
                     {
                         if (w.PostUrl is null)
@@ -156,7 +156,7 @@ namespace BotTidus.Services.DiscordWebhook
                         }
 
                         if (((w.NotifiesOn & Domain.DiscordWebhook.MessageFilter.UserMentioned) != 0 && mentionedUsers.Contains(userId))
-                            || ((w.NotifiesOn & Domain.DiscordWebhook.MessageFilter.GroupMentioned) != 0 && mentionedGroups.Intersect(userDetail.Groups).Any())
+                            || ((w.NotifiesOn & Domain.DiscordWebhook.MessageFilter.GroupMentioned) != 0 && mentionedGroups.Intersect(userDetail.Groups!.Select(g => g!.Value)).Any())
                             || ((w.NotifiesOn & Domain.DiscordWebhook.MessageFilter.UserMessageCited) != 0 && citedUsers.Contains(userId)))
                         {
                             if (webhookEmbeds.TryGetValue(w.Id, out var embeds))

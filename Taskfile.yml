@@ -5,6 +5,7 @@ tasks:
   install-libs:
     cmds:
       - task: _install-traq-extensions
+      - task: _install-traq-aot
 
   _install-traq-extensions:
     internal: true
@@ -12,6 +13,19 @@ tasks:
     cmds:
       - git clone git@github.com:YuHima03/dotnet-traq-extensions.git
       - cd dotnet-traq-extensions && git checkout feat/message-extensions
+
+  _install-traq-aot:
+    internal: true
+    dir: libs
+    cmds:
+      - git clone git@github.com:YuHima03/dotnet-traq.git
+      - cd dotnet-traq && git checkout aot
+
+  update-libs:
+    dir: libs
+    cmds:
+      - cd dotnet-traq-extensions && git pull
+      - cd dotnet-traq && git pull
 
   dev-up:
     cmds:
@@ -26,3 +40,14 @@ tasks:
     - docker compose build
     - task: down
     - task: up
+
+  ef-native-aot:
+    desc: Precompiles model types used by the DbContext class for Native AOT compilation.
+    cmds:
+      - |
+        dotnet ef dbcontext optimize \
+          --project         src/BotTidus.RepositoryImpl \
+          --startup-project src/BotTidus \
+          --output-dir      CompiledModels \
+          --precompile-queries \
+          --nativeaot

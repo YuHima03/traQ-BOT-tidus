@@ -18,7 +18,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
      * face rank [-b|--include-bots] [-i|--inverse] [{-a|--all}|{-t|--take} <COUNT>]
      * face update {phrase|reaction} <MESSAGE> [--add <COUNT>] [--sub <COUNT>]
      */
-    struct FaceCommandHandler(TraqBotOptions botOptions, IMemoryCache cache, BotEventUser sender, IRepositoryFactory repoFactory, ITraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
+    struct FaceCommandHandler(TraqBotOptions botOptions, IMemoryCache cache, BotEventUser sender, IRepositoryFactory repoFactory, TraqApiClient traq) : IAsyncConsoleCommandHandler<FaceCommandResult>
     {
         bool _help = false;
         string? _messageIdOrUri;
@@ -113,8 +113,8 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             }
                             await Task.WhenAll(
                                 repo.DeleteMessageFaceScoreAsync(messageId, cancellationToken).AsTask(),
-                                traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
-                                traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
+                                traq.Messages[messageId].Stamps[MessageFaceCounter.PositiveReactionGuid].DeleteAsync(cancellationToken: cancellationToken),
+                                traq.Messages[messageId].Stamps[MessageFaceCounter.NegativeReactionGuid].DeleteAsync(cancellationToken: cancellationToken)
                                 );
                             return new() { IsSuccessful = true, ReactionStampId = Constants.TraqStamps.WhiteCheckMark.Id };
                         }
@@ -133,7 +133,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                     username = embedding.DisplayText.StartsWith("@") ? embedding.DisplayText[1..].ToString() : embedding.DisplayText.ToString();
                                     userId = embedding.EmbeddedId;
                                 }
-                                else if (await traq.UserApi.TryGetCachedUserIdAsync(_username, cache, out var userTask, cancellationToken))
+                                else if (await traq.Users.TryGetCachedUserIdAsync(_username, cache, out var userTask, cancellationToken))
                                 {
                                     username = _username;
                                     userId = await userTask;
@@ -151,14 +151,14 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                 Message = count switch
                                 {
                                     { NegativePhraseCount: 0, NegativeReactionCount: 0, PositivePhraseCount: 0, PositiveReactionCount: 0 } => $$"""
-                            :@{{username}}: {{username}} の現在の顔: **{{count.TotalScore}}** 個
-                            顔の増減はまだないようです.
-                            """,
+                                    :@{{username}}: {{username}} の現在の顔: **{{count.TotalScore}}** 個
+                                    顔の増減はまだないようです.
+                                    """,
                                     _ => $$"""
-                            :@{{username}}: {{username}} の現在の顔: **{{count.TotalScore}}** 個
-                            - :dotted_line_face: {{count.NegativePhraseCount + count.NegativeReactionCount}} 回
-                            - :star_struck: {{count.PositivePhraseCount + count.PositiveReactionCount}} 回
-                            """
+                                    :@{{username}}: {{username}} の現在の顔: **{{count.TotalScore}}** 個
+                                    - :dotted_line_face: {{count.NegativePhraseCount + count.NegativeReactionCount}} 回
+                                    - :star_struck: {{count.PositivePhraseCount + count.PositiveReactionCount}} 回
+                                    """
                                 }
                             };
                         }
@@ -185,10 +185,10 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             }
 
                             StringBuilder sb = new("""
-                        顔ランキング
-                        | 順位 | ユーザー | 現在の数 |
-                        | ---: | :------ | -------: |
-                        """);
+                            顔ランキング
+                            | 順位 | ユーザー | 現在の数 |
+                            | ---: | :------ | -------: |
+                            """);
                             sb.AppendLine();
 
 
@@ -197,12 +197,12 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             if (!_rank_includeBots)
                             {
                                 var traq_ = traq;
-                                filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => !(await traq_.UserApi.GetCachedUserAbstractAsync(x.UserId, cache_, ct)).IsBot);
+                                filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => !(await traq_.Users.GetCachedUserAbstractAsync(x.UserId, cache_, ct)).IsBot);
                             }
                             if (!_rank_includeDeactivatedUsers)
                             {
                                 var traq_ = traq;
-                                filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => (await traq_.UserApi.GetCachedUserAsync(x.UserId, cache_, ct)).State != Traq.Model.UserAccountState.deactivated);
+                                filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => (await traq_.Users.GetCachedUserAsync(x.UserId, cache_, ct)).State is not 0);
                             }
                             if (!_rank_all)
                             {
@@ -217,7 +217,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             while (await en.MoveNextAsync(cancellationToken))
                             {
                                 var current = en.Current;
-                                var username = await traq.UserApi.GetCachedUserNameAsync(current.UserId, cache, cancellationToken);
+                                var username = await traq.Users.GetCachedUserNameAsync(current.UserId, cache, cancellationToken);
                                 var count = current.TotalScore;
                                 sb.AppendLine($"| {(count == prevCount ? "-" : rank)} | :@{username}: {username} | {count} |");
                                 prevCount = count;
@@ -253,8 +253,8 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                 // remove record
                                 await Task.WhenAll(
                                     repo.DeleteMessageFaceScoreAsync(messageId, cancellationToken).AsTask(),
-                                    traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
-                                    traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
+                                    traq.Messages[messageId].Stamps[MessageFaceCounter.PositiveReactionGuid].DeleteAsync(cancellationToken: cancellationToken),
+                                    traq.Messages[messageId].Stamps[MessageFaceCounter.NegativeReactionGuid].DeleteAsync(cancellationToken: cancellationToken)
                                     );
                                 return new() { IsSuccessful = true, ReactionStampId = Constants.TraqStamps.WhiteCheckMark.Id };
                             }
@@ -270,11 +270,11 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             {
                                 if (value is null)
                                 {
-                                    var msgDetail = await traq_.MessageApi.GetMessageAsync(messageId, cancellationToken);
+                                    var msgDetail = await traq_.Messages[messageId].GetAsync(cancellationToken: cancellationToken) ?? throw new Exception("The API response is null.");
                                     return recordType switch
                                     {
-                                        UpdateRecordTypes.Phrase => new MessageFaceScore(messageId, msgDetail.UserId, 0, 0, 0, 0) with { NegativePhraseCount = sub, PositivePhraseCount = add },
-                                        UpdateRecordTypes.Reaction => new MessageFaceScore(messageId, msgDetail.UserId, 0, 0, 0, 0) with { NegativeReactionCount = sub, PositiveReactionCount = add },
+                                        UpdateRecordTypes.Phrase => new MessageFaceScore(messageId, msgDetail.UserId!.Value, 0, 0, 0, 0) with { NegativePhraseCount = sub, PositivePhraseCount = add },
+                                        UpdateRecordTypes.Reaction => new MessageFaceScore(messageId, msgDetail.UserId!.Value, 0, 0, 0, 0) with { NegativeReactionCount = sub, PositiveReactionCount = add },
                                         _ => null!
                                     };
                                 }
@@ -291,12 +291,12 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             cancellationToken);
 
                             await Task.WhenAll(
-                                traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, cancellationToken),
-                                traq.StampApi.RemoveMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, cancellationToken)
+                                traq.Messages[messageId].Stamps[MessageFaceCounter.PositiveReactionGuid].DeleteAsync(cancellationToken: cancellationToken),
+                                traq.Messages[messageId].Stamps[MessageFaceCounter.NegativeReactionGuid].DeleteAsync(cancellationToken: cancellationToken)
                                 );
                             await Task.WhenAll(
-                                traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, (int)(score.PositivePhraseCount + score.PositiveReactionCount), cancellationToken).AsTask(),
-                                traq.StampApi.AddManyMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, (int)(score.NegativePhraseCount + score.NegativeReactionCount), cancellationToken).AsTask()
+                                traq.Messages.AddManyMessageStampAsync(messageId, MessageFaceCounter.PositiveReactionGuid, (int)(score.PositivePhraseCount + score.PositiveReactionCount), cancellationToken).AsTask(),
+                                traq.Messages.AddManyMessageStampAsync(messageId, MessageFaceCounter.NegativeReactionGuid, (int)(score.NegativePhraseCount + score.NegativeReactionCount), cancellationToken).AsTask()
                                 );
 
                             return new() { IsSuccessful = true, ReactionStampId = Constants.TraqStamps.WhiteCheckMark.Id };

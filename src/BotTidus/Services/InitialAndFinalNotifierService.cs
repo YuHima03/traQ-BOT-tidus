@@ -10,11 +10,11 @@ using Traq;
 namespace BotTidus.Services
 {
     internal class InitialAndFinalNotifierService(
-        ITraqApiClient traq,
+        TraqApiClient traq,
         ILogger<InitialAndFinalNotifierService> logger,
         IOptions<HealthCheckAlertOptions> alertOptions,
         IOptions<TraqBotOptions> botOptions,
-        ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
+        ObjectPool<Traq.Models.PostMessageRequest> postMessageRequestPool,
         IHostEnvironment hostEnv
         ) : IHostedService
     {
@@ -38,7 +38,7 @@ namespace BotTidus.Services
                 | Version     | `{Assembly.GetEntryAssembly()?.GetName()}` |
                 """;
                 req.Embed = true;
-                await traq.MessageApi.PostMessageAsync(alertOptions.Value.AlertChannelId, req, cancellationToken);
+                await traq.Channels[alertOptions.Value.AlertChannelId].Messages.PostAsync(req, cancellationToken: cancellationToken);
                 postMessageRequestPool.Return(req);
             }
             catch (Exception e)
@@ -67,7 +67,7 @@ namespace BotTidus.Services
                     | Version     | `{Assembly.GetEntryAssembly()?.GetName()}` |
                     """;
                 req.Embed = true;
-                await traq.MessageApi.PostMessageAsync(alertOptions.Value.AlertChannelId, req, cancellationToken);
+                await traq.Channels[alertOptions.Value.AlertChannelId].Messages.PostAsync(req, cancellationToken: cancellationToken);
                 postMessageRequestPool.Return(req);
             }
             catch (Exception e)
