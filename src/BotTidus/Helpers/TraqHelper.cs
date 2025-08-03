@@ -76,7 +76,7 @@ namespace BotTidus.Helpers
                 }
                 before = result[^1].CreatedAt!.Value - TimeSpan.FromMicroseconds(1);
             }
-            throw new Exception("Too many requests.");
+            throw new Exception("Exceeded maximum search message limit.");
         }
 
         public record SearchQuery(
