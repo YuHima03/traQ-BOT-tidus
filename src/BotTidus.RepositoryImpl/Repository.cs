@@ -1,18 +1,26 @@
 ﻿using BotTidus.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.Diagnostics.CodeAnalysis;
 
 namespace BotTidus.RepositoryImpl
 {
-    public sealed partial class Repository(DbContextOptions<Repository> options) : DbContext(options), IRepository
+    [Obsolete("Use BotTidus.Infrastructure.Repository.BotDbContext instead.")]
+    public sealed partial class Repository : IRepository
     {
-        public DbSet<Models.MessageFaceScore> MessageFaceScores { get; set; }
+        [NotNull]
+        public DbSet<Models.MessageFaceScore>? MessageFaceScores { get; }
 
-        public DbSet<Models.DiscordWebhook> DiscordWebhooks { get; set; }
+        [NotNull]
+        public DbSet<Models.DiscordWebhook>? DiscordWebhooks { get; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Models.RepoUserFaceCount>();
-        }
+        [NotNull]
+        public DatabaseFacade? Database { get; }
+
+        public Task SaveChangesAsync(CancellationToken ct = default) => Task.CompletedTask;
+
+        public void Dispose() { }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }
