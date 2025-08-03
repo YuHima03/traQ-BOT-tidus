@@ -51,3 +51,20 @@ tasks:
           --output-dir      CompiledModels \
           --precompile-queries \
           --nativeaot
+
+  ef-scaffold:
+    desc: Scaffold a new DbContext and entity types based on the current database schema.
+    dir: .
+    dotenv:
+      - .env
+    cmds:
+      - echo "Scaffolding from $NS_MARIADB_HOSTNAME:$NS_MARIADB_PORT/$NS_MARIADB_DATABASE"
+      - |
+        dotnet ef dbcontext scaffold \
+          "Server=$NS_MARIADB_HOSTNAME;Port=$NS_MARIADB_PORT;Database=$NS_MARIADB_DATABASE;User Id=$NS_MARIADB_USER;Password=$NS_MARIADB_PASSWORD;" \
+          "Pomelo.EntityFrameworkCore.MySql" \
+          --project src/BotTidus.Infrastructure \
+          --output-dir Repository \
+          --context BotDbContext \
+          --data-annotations \
+          --no-onconfiguring
