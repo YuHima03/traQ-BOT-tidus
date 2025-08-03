@@ -41,14 +41,17 @@ tasks:
     - task: down
     - task: up
 
-  ef-native-aot:
+  ef-precompile:
     desc: Precompiles model types used by the DbContext class for Native AOT compilation.
     cmds:
       - |
         dotnet ef dbcontext optimize \
-          --project         src/BotTidus.RepositoryImpl \
+          --project         src/BotTidus.Infrastructure \
           --startup-project src/BotTidus \
-          --output-dir      CompiledModels \
+          --output-dir      Repository/Compiled \
+          --context         BotTidus.Infrastructure.Repository.BotDbContext \
+          --namespace       BotTidus.Infrastructure.Repository \
+          --suffix          ".g" \
           --precompile-queries \
           --nativeaot
 
