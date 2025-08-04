@@ -62,29 +62,28 @@ namespace BotTidus.Infrastructure.Repository
 
         public async ValueTask DeleteMessageFaceScoreAsync(Guid messageId, CancellationToken ct)
         {
-            var entity = await MessageFaceScores.FindAsync([messageId], ct);
-            if (entity is not null)
-            {
-                MessageFaceScores.Remove(entity);
-            }
-            await SaveChangesAsync(ct);
-            return;
+            var ctx = this;
+            var mid = messageId;
+            await ctx.MessageFaceScores
+                .AsNoTracking()
+                .Where(s => s.MessageId == mid)
+                .ExecuteDeleteAsync();
         }
 
         public async ValueTask<MessageFaceScore> GetMessageFaceScoreAsync(Guid messageId, CancellationToken ct)
         {
-            var entity = await MessageFaceScores.FindAsync([messageId], ct);
-            if (entity is not null)
-            {
-                return entity.ToDomain();
-            }
-            throw new KeyNotFoundException($"MessageFaceScore with ID {messageId} not found.");
+            return await GetMessageFaceScoreOrDefaultAsync(messageId, ct) ?? throw new KeyNotFoundException($"MessageFaceScore with ID {messageId} not found.");
         }
 
         public async ValueTask<MessageFaceScore?> GetMessageFaceScoreOrDefaultAsync(Guid messageId, CancellationToken ct)
         {
-            var entity = await MessageFaceScores.FindAsync([messageId], ct);
-            return entity?.ToDomain();
+            var ctx = this;
+            var mid = messageId;
+            return await ctx.MessageFaceScores
+                .Where(s => s.MessageId == mid)
+                .Select(MessageFaceScoreExtensions.ToDomainExpression)
+                .AsAsyncEnumerable()
+                .FirstOrDefaultAsync(ct);
         }
 
         public async ValueTask<MessageFaceScore[]> GetMessageFaceScoresByUserIdAsync(Guid userId, CancellationToken ct)
