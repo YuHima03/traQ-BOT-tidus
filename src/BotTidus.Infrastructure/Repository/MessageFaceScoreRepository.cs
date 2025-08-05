@@ -68,7 +68,7 @@ namespace BotTidus.Infrastructure.Repository
 
                     if (rowsAffected == 0)
                     {
-                        throw new Exception($"Failed to update face score of the message {messageId}.");
+                        throw new InvalidOperationException($"No rows were affected when updating face score for message {messageId}. The message may have been deleted or modified by another process.");
                     }
                 }
                 await tx.CommitAsync(ct);
