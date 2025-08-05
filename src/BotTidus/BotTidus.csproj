@@ -39,7 +39,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BotTidus.Infrastructure\BotTidus.Infrastructure.csproj" />
-    <ProjectReference Include="..\BotTidus.RepositoryImpl\BotTidus.RepositoryImpl.csproj" />
     <ProjectReference Include="..\..\libs\dotnet-traq-extensions\src\Traq.Extensions.Messages\Traq.Extensions.Messages.csproj" />
     <ProjectReference Include="..\..\libs\dotnet-traq\src\Traq\Traq.csproj" />
   </ItemGroup>
