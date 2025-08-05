@@ -55,6 +55,7 @@ namespace BotTidus.Infrastructure.Repository
                         var (np, nr, pp, pr) = (updated.NegativePhraseCount, updated.NegativeReactionCount, updated.PositivePhraseCount, updated.PositiveReactionCount);
                         var uid = updated.AuthorId;
                         return ctx.MessageFaceScores
+                            .AsNoTracking()
                             .Where(s => s.MessageId == mid)
                             .ExecuteUpdate(s => s
                                 .SetProperty(m => m.NegativePhraseCount, np)
@@ -102,6 +103,7 @@ namespace BotTidus.Infrastructure.Repository
             var ctx = this;
             var mid = messageId;
             return await ctx.MessageFaceScores
+                .AsNoTracking()
                 .Where(s => s.MessageId == mid)
                 .Select(MessageFaceScoreExtensions.ToDomainExpression)
                 .AsAsyncEnumerable()
@@ -113,6 +115,7 @@ namespace BotTidus.Infrastructure.Repository
             var ctx = this;
             var uid = userId;
             return await ctx.MessageFaceScores
+                .AsNoTracking()
                 .Where(r => r.UserId == uid)
                 .Select(MessageFaceScoreExtensions.ToDomainExpression)
                 .AsAsyncEnumerable()
@@ -124,6 +127,7 @@ namespace BotTidus.Infrastructure.Repository
             var ctx = this;
             var uid = userId;
             var rows = ctx.MessageFaceScores
+                .AsNoTracking()
                 .Where(s => s.UserId == uid)
                 .Select(MessageFaceScoreExtensions.ToDomainExpression) // Do not remove this line, it is necessary for EF Core to compile the query correctly.
                 .AsAsyncEnumerable();
@@ -142,6 +146,7 @@ namespace BotTidus.Infrastructure.Repository
         {
             var ctx = this;
             return await ctx.MessageFaceScores
+                .AsNoTracking()
                 .GroupBy(s => s.UserId)
                 .Select(g => new UserFaceCount(
                     g.Key,
