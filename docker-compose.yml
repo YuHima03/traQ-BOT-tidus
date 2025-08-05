@@ -3,9 +3,9 @@ services:
   bot:
     build:
       context: ./
-      dockerfile: ./src/BotTidus/Dockerfile
+      dockerfile: ./Dockerfile
     environment:
-      ON_DOCKER: "true"
+      DOTNET_ENVIRONMENT: Development
     env_file:
       - ./.env
       - ./src/BotTidus/.env
@@ -20,7 +20,7 @@ services:
     ports:
       - $MARIADB_EXPOSE_PORT:3306
     environment:
-      MARIADB_PORT: $NS_MARIADB_PORT
+      MARIADB_PORT: 3306
       MARIADB_USER: $NS_MARIADB_USER
       MARIADB_PASSWORD: $NS_MARIADB_PASSWORD
       MARIADB_ROOT_PASSWORD: password

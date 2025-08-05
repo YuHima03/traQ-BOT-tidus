@@ -12,8 +12,8 @@ namespace BotTidus.Services.HealthCheck
     internal sealed class HealthCheckPublisher(
         IOptions<HealthCheckAlertOptions> options,
         ILogger<HealthCheckPublisher> logger,
-        ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ITraqApiClient traq,
+        ObjectPool<Traq.Models.PostMessageRequest> postMessageRequestPool,
+        TraqApiClient traq,
         IHostEnvironment env
         ) : IHealthCheckPublisher
     {
@@ -70,7 +70,7 @@ namespace BotTidus.Services.HealthCheck
                 var req = postMessageRequestPool.Get();
                 req.Content = sb.ToString();
                 req.Embed = false;
-                await traq.MessageApi.PostMessageAsync(opt.AlertChannelId, req, cancellationToken);
+                await traq.Channels[opt.AlertChannelId].Messages.PostAsync(req, cancellationToken: cancellationToken);
                 postMessageRequestPool.Return(req);
             }
             catch (Exception e)

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics.CodeAnalysis;
-using System.Net;
 
 namespace BotTidus.Helpers
 {
@@ -26,48 +25,56 @@ namespace BotTidus.Helpers
             return cache.TryGetValue($"{prop}:{key}", out value);
         }
 
-        public static async ValueTask<Traq.Model.UserDetail> GetCachedUserAsync(this Traq.Api.IUserApi api, Guid id, IMemoryCache cache, CancellationToken ct)
+        public static async ValueTask<Traq.Models.UserDetail> GetCachedUserAsync(this Traq.Users.UsersRequestBuilder users, Guid id, IMemoryCache cache, CancellationToken ct)
         {
-            if (cache.TryGetValue<Traq.Model.UserDetail>(Prop_User, id, out var user) && user is not null)
+            if (cache.TryGetValue<Traq.Models.UserDetail>(Prop_User, id, out var user) && user is not null)
             {
                 return user;
             }
-            user = await api.GetUserAsync(id, ct);
-            cache.Set(Prop_User, id, user, UserDetailExpiration);
-            return user;
+            user = await users[id].GetAsync(null, ct);
+            if (user is not null)
+            {
+                cache.Set(Prop_User, id, user, UserDetailExpiration);
+            }
+            return user!;
         }
 
-        public static async ValueTask<UserPermanentInfo> GetCachedUserAbstractAsync(this Traq.Api.IUserApi api, Guid id, IMemoryCache cache, CancellationToken ct)
+        public static async ValueTask<UserPermanentInfo> GetCachedUserAbstractAsync(this Traq.Users.UsersRequestBuilder users, Guid id, IMemoryCache cache, CancellationToken ct)
         {
             if (cache.TryGetValue<UserPermanentInfo>(Prop_UserAbstract, id, out var user) && user is not null)
             {
                 return user;
             }
-            var userDetail = await api.GetCachedUserAsync(id, cache, ct);
+            var userDetail = await users.GetCachedUserAsync(id, cache, ct) ?? throw new Exception("User is not found.");
             user = new UserPermanentInfo
             {
-                Id = userDetail.Id,
+                Id = userDetail.Id.GetValueOrDefault(),
                 Name = userDetail.Name,
-                IsBot = userDetail.Bot
+                IsBot = userDetail.Bot.GetValueOrDefault()
             };
             cache.Set(Prop_UserAbstract, id, user, UserAbstractExpiration);
             return user;
         }
 
-        public static async ValueTask<Guid> GetCachedUserIdAsync(this Traq.Api.IUserApi api, string name, IMemoryCache cache, CancellationToken ct)
+        public static async ValueTask<Guid> GetCachedUserIdAsync(this Traq.Users.UsersRequestBuilder users, string name, IMemoryCache cache, CancellationToken ct)
         {
             var nameLower = name.ToLower();
             if (cache.TryGetValue<Guid>(Prop_UsernameMapping, nameLower, out var id))
             {
                 return id;
             }
-            var user = (await api.GetUsersAsync(null, name, ct)).Single();
-            cache.Set(Prop_UsernameMapping, nameLower, user.Id, UserNameMappingExpiration);
-            cache.Set(Prop_UsernameMapping, user.Id, nameLower, UserNameMappingExpiration);
-            return user.Id;
+            var user = (await users.GetAsync(conf => conf.QueryParameters.Name = name, ct))?.SingleOrDefault();
+            if (user is null)
+            {
+                throw new Exception("User is not found.");
+            }
+            var userId = user.Id!.Value;
+            cache.Set(Prop_UsernameMapping, nameLower, userId, UserNameMappingExpiration);
+            cache.Set(Prop_UsernameMapping, userId, nameLower, UserNameMappingExpiration);
+            return userId;
         }
 
-        public static async ValueTask<string> GetCachedUserNameAsync(this Traq.Api.IUserApi api, Guid id, IMemoryCache cache, CancellationToken ct)
+        public static async ValueTask<string> GetCachedUserNameAsync(this Traq.Users.UsersRequestBuilder users, Guid id, IMemoryCache cache, CancellationToken ct)
         {
             if (!cache.TryGetValue<UserPermanentInfo>(Prop_UserAbstract, id, out var user) || user is null)
             {
@@ -75,7 +82,7 @@ namespace BotTidus.Helpers
                 {
                     return name!;
                 }
-                user = await api.GetCachedUserAbstractAsync(id, cache, ct);
+                user = await users.GetCachedUserAbstractAsync(id, cache, ct);
             }
             var nameLower = user.Name.ToLower();
             cache.Set(Prop_UsernameMapping, id, nameLower, UserNameMappingExpiration);
@@ -83,47 +90,40 @@ namespace BotTidus.Helpers
             return user.Name;
         }
 
-        public static async ValueTask<string?> TryGetCachedChannelPathAsync(this Traq.Api.IChannelApi api, Guid id, IMemoryCache cache, CancellationToken ct)
+        public static async ValueTask<string?> TryGetCachedChannelPathAsync(this Traq.Channels.ChannelsRequestBuilder channels, Guid id, IMemoryCache cache, CancellationToken ct)
         {
             if (cache.TryGetValue<string>(Prop_ChannelPath, id, out var p) && p is not null)
             {
                 return p;
             }
-            try
+            var path = await channels[id].Path.GetAsync(null, ct);
+            if (path is not null)
             {
-                var path = await api.GetChannelPathAsync(id, ct);
-                if (path is not null)
-                {
-                    cache.Set(Prop_ChannelPath, id, path.Path, ChannelPathExpiration);
-                    return path.Path;
-                }
-                return null;
+                cache.Set(Prop_ChannelPath, id, path.Path, ChannelPathExpiration);
+                return path.Path;
             }
-            catch (Traq.Client.ApiException ex) when (ex.ErrorCode == (int)HttpStatusCode.NotFound)
-            {
-                return null;
-            }
+            return null;
         }
 
-        public static ValueTask<bool> TryGetCachedUserIdAsync(this Traq.Api.IUserApi api, string name, IMemoryCache cache, out ValueTask<Guid> resultTask, CancellationToken ct)
+        public static ValueTask<bool> TryGetCachedUserIdAsync(this Traq.Users.UsersRequestBuilder users, string name, IMemoryCache cache, out ValueTask<Guid> resultTask, CancellationToken ct)
         {
             if (cache.TryGetValue<Guid>(Prop_UsernameMapping, name, out var userId))
             {
                 resultTask = ValueTask.FromResult(userId);
                 return ValueTask.FromResult(true);
             }
-            var task = api.GetUsersAsync(null, name, ct).ContinueWith(t => t.Result.SingleOrDefault()?.Id);
-            resultTask = new(task.ContinueWith(t => t.Result.GetValueOrDefault()));
+            var task = users.GetAsync(conf => conf.QueryParameters.Name = name, ct).ContinueWith(t => t.Result?.SingleOrDefault()?.Id ?? Guid.Empty);
+            resultTask = new(task);
             return new(task.ContinueWith(t =>
             {
-                var res = t.Result;
-                if (!res.HasValue)
+                var id = t.Result;
+                if (id == Guid.Empty)
                 {
                     return false;
                 }
                 var nameLower = name.ToLower();
-                cache.Set(Prop_UsernameMapping, res.Value, nameLower, UserNameMappingExpiration);
-                cache.Set(Prop_UsernameMapping, nameLower, res.Value, UserNameMappingExpiration);
+                cache.Set(Prop_UsernameMapping, id, nameLower, UserNameMappingExpiration);
+                cache.Set(Prop_UsernameMapping, nameLower, id, UserNameMappingExpiration);
                 return true;
             }));
         }

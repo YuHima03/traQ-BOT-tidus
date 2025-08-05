@@ -5,6 +5,7 @@ tasks:
   install-libs:
     cmds:
       - task: _install-traq-extensions
+      - task: _install-traq-aot
 
   _install-traq-extensions:
     internal: true
@@ -13,16 +14,73 @@ tasks:
       - git clone git@github.com:YuHima03/dotnet-traq-extensions.git
       - cd dotnet-traq-extensions && git checkout feat/message-extensions
 
-  dev-up:
+  _install-traq-aot:
+    internal: true
+    dir: libs
     cmds:
-    - docker compose up -d --build
+      - git clone git@github.com:YuHima03/dotnet-traq.git
+      - cd dotnet-traq && git checkout aot
 
-  dev-down:
+  update-libs:
+    dir: libs
     cmds:
-    - docker compose down
+      - cd dotnet-traq-extensions && git pull
+      - cd dotnet-traq && git pull
 
-  dev-restart:
+  build:
+    desc: Build the docker image of the project.
     cmds:
-    - docker compose build
-    - task: down
-    - task: up
+      - docker compose build bot --no-cache
+
+  up:
+    desc: Start the docker containers of the project.
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: Stop the docker containers of the project.
+    cmds:
+      - docker compose down
+
+  ef-generate-models:
+    desc: Precompiles model types used by the DbContext class.
+    cmds:
+      - |
+        dotnet ef dbcontext optimize \
+          --project         src/BotTidus.Infrastructure \
+          --startup-project src/BotTidus \
+          --output-dir      Repository/Compiled \
+          --context         BotTidus.Infrastructure.Repository.BotDbContext \
+          --namespace       BotTidus.Infrastructure.Repository \
+          --suffix          ".g"
+
+  ef-precompile:
+    desc: Precompiles model types used by the DbContext class for Native AOT compilation.
+    cmds:
+      - |
+        dotnet ef dbcontext optimize \
+          --project         src/BotTidus.Infrastructure \
+          --startup-project src/BotTidus \
+          --output-dir      Repository/Compiled \
+          --context         BotTidus.Infrastructure.Repository.BotDbContext \
+          --namespace       BotTidus.Infrastructure.Repository \
+          --suffix          ".g" \
+          --precompile-queries \
+          --nativeaot
+
+  ef-scaffold:
+    desc: Scaffold a new DbContext and entity types based on the current database schema.
+    dir: .
+    dotenv:
+      - .env
+    cmds:
+      - echo "Scaffolding from $NS_MARIADB_HOSTNAME:$NS_MARIADB_PORT/$NS_MARIADB_DATABASE"
+      - |
+        dotnet ef dbcontext scaffold \
+          "Server=$NS_MARIADB_HOSTNAME;Port=$NS_MARIADB_PORT;Database=$NS_MARIADB_DATABASE;User Id=$NS_MARIADB_USER;Password=$NS_MARIADB_PASSWORD;" \
+          "Pomelo.EntityFrameworkCore.MySql" \
+          --project src/BotTidus.Infrastructure \
+          --output-dir Repository \
+          --context BotDbContext \
+          --data-annotations \
+          --no-onconfiguring

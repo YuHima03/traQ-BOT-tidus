@@ -12,7 +12,7 @@ namespace BotTidus.Services
     {
         readonly IMemoryCache _cache;
         readonly ILogger<DailyMessageCollectingService> _logger;
-        readonly ITraqApiClient _traq;
+        readonly TraqApiClient _traq;
         readonly TraqHealthCheckPublisher _traqHealthCheck;
         readonly TimeZoneInfo _timeZoneInfo;
 
@@ -24,7 +24,7 @@ namespace BotTidus.Services
             }
             _cache = services.GetRequiredService<IMemoryCache>();
             _logger = services.GetRequiredService<ILogger<DailyMessageCollectingService>>();
-            _traq = services.GetRequiredService<ITraqApiClient>();
+            _traq = services.GetRequiredService<TraqApiClient>();
             _traqHealthCheck = services.GetRequiredService<TraqHealthCheckPublisher>();
             _timeZoneInfo = services.GetService<TimeZoneInfo>() ?? TimeZoneInfo.Utc;
         }
@@ -43,9 +43,9 @@ namespace BotTidus.Services
             try
             {
                 var cacheKey = $"services.dailyMessageCollector:{yesterdayStart:yyyyMMdd}";
-                if (!_cache.TryGetValue(cacheKey, out Traq.Model.Message[]? messages) || messages is null)
+                if (!_cache.TryGetValue(cacheKey, out List<Traq.Models.Message>? messages) || messages is null)
                 {
-                    messages = [.. await _traq.MessageApi.SearchManyMessagesAsync(new() { After = TimeZoneInfo.ConvertTimeToUtc(yesterdayStart, _timeZoneInfo), Before = TimeZoneInfo.ConvertTimeToUtc(yesterdayEnd, _timeZoneInfo) }, ct)];
+                    messages = await _traq.Messages.SearchManyMessagesAsync(new() { After = TimeZoneInfo.ConvertTimeToUtc(yesterdayStart, _timeZoneInfo), Before = TimeZoneInfo.ConvertTimeToUtc(yesterdayEnd, _timeZoneInfo) }, ct);
                     _cache.Set(cacheKey, messages, TimeSpan.FromMinutes(5));
                 }
                 await OnCollectAsync(messages, ct);
@@ -56,6 +56,6 @@ namespace BotTidus.Services
             }
         }
 
-        protected abstract ValueTask OnCollectAsync(Traq.Model.Message[] messages, CancellationToken ct);
+        protected abstract ValueTask OnCollectAsync(IList<Traq.Models.Message> messages, CancellationToken ct);
     }
 }

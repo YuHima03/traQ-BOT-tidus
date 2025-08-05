@@ -15,21 +15,20 @@ using Traq.Bot.Models;
 namespace BotTidus.Services.InteractiveBot
 {
     sealed class InteractiveBotService(
-        ITraqApiClient traq,
-        IOptions<TraqApiClientOptions> traqOptions,
+        TraqApiClient traq,
         IOptions<TraqBotOptions> botOptions,
         ILoggerFactory loggers,
         IRepositoryFactory repoFactory,
         IMemoryCache cache,
         HealthCheckService healthCheckService,
-        ObjectPool<Traq.Model.PostBotActionJoinRequest> postBotActionJoinRequestPool,
-        ObjectPool<Traq.Model.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
-        ObjectPool<Traq.Model.PostMessageRequest> postMessageRequestPool,
-        ObjectPool<Traq.Model.PostMessageStampRequest> postMessageStampRequestPool,
+        ObjectPool<Traq.Models.PostBotActionJoinRequest> postBotActionJoinRequestPool,
+        ObjectPool<Traq.Models.PostBotActionLeaveRequest> postBotActionLeaveRequestPool,
+        ObjectPool<Traq.Models.PostMessageRequest> postMessageRequestPool,
+        ObjectPool<Traq.Models.PostMessageStampRequest> postMessageStampRequestPool,
         IHostEnvironment hostEnv
         )
         : Traq.Bot.WebSocket.TraqWsBot(
-            traqOptions,
+            Options.Create(new TraqApiClientOptions() { BaseAddress = botOptions.Value.TraqApiBaseAddress!, BearerAuthToken = botOptions.Value.TraqAccessToken }),
             loggers.CreateLogger<Traq.Bot.WebSocket.TraqWsBot>(),
             loggers.CreateLogger<Traq.Bot.TraqBot>()
             )
@@ -62,19 +61,20 @@ namespace BotTidus.Services.InteractiveBot
             }
             else if (MessageReactions.TryGetReaction(args.Message.Text, args.Message.Author.Id, out var reaction))
             {
-                var stampReq = postMessageStampRequestPool.Get();
-                stampReq.Count = 1;
-
-                var mesReq = postMessageRequestPool.Get();
-                (mesReq.Content, mesReq.Embed) = (reaction.Message!, false);
-
-                await Task.WhenAll(
-                    reaction.Stamp is not null ? traq.StampApi.AddMessageStampAsync(args.Message.Id, reaction.Stamp.Value, stampReq, ct) : Task.CompletedTask,
-                    reaction.Message is not null ? traq.MessageApi.PostMessageAsync(args.Message.ChannelId, mesReq, ct) : Task.CompletedTask
-                    );
-
-                postMessageStampRequestPool.Return(stampReq);
-                postMessageRequestPool.Return(mesReq);
+                if (reaction.Stamp is not null)
+                {
+                    var stampReq = postMessageStampRequestPool.Get();
+                    stampReq.Count = 1;
+                    await traq.Messages[args.Message.Id].Stamps[reaction.Stamp.Value].PostAsync(stampReq, cancellationToken: ct);
+                    postMessageStampRequestPool.Return(stampReq);
+                }
+                if (!string.IsNullOrWhiteSpace(reaction.Message))
+                {
+                    var mesReq = postMessageRequestPool.Get();
+                    (mesReq.Content, mesReq.Embed) = (reaction.Message, false);
+                    await traq.Channels[args.Message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
+                    postMessageRequestPool.Return(mesReq);
+                }
             }
         }
 
@@ -112,14 +112,14 @@ namespace BotTidus.Services.InteractiveBot
                                 {
                                     var mesReq = postMessageRequestPool.Get();
                                     (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                    await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
+                                    await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
                                     postMessageRequestPool.Return(mesReq);
                                 }
                                 else if (result.ReactionStampId is not null)
                                 {
                                     var stampReq = postMessageStampRequestPool.Get();
                                     stampReq.Count = 1;
-                                    await traq.MessageApi.AddMessageStampAsync(message.Id, result.ReactionStampId.Value, stampReq, ct);
+                                    await traq.Messages[message.Id].Stamps[result.ReactionStampId.Value].PostAsync(stampReq, cancellationToken: ct);
                                     postMessageStampRequestPool.Return(stampReq);
                                 }
                                 return true;
@@ -137,7 +137,7 @@ namespace BotTidus.Services.InteractiveBot
                             {
                                 var mesReq = postMessageRequestPool.Get();
                                 (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
+                                await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
                                 postMessageRequestPool.Return(mesReq);
                                 return true;
                             }
@@ -154,7 +154,7 @@ namespace BotTidus.Services.InteractiveBot
                             {
                                 var mesReq = postMessageRequestPool.Get();
                                 (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
+                                await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
                                 postMessageRequestPool.Return(mesReq);
                                 return true;
                             }
@@ -171,7 +171,7 @@ namespace BotTidus.Services.InteractiveBot
                             {
                                 var stampReq = postMessageStampRequestPool.Get();
                                 stampReq.Count = 1;
-                                await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
+                                await traq.Messages[message.Id].Stamps[Constants.TraqStamps.WhiteCheckMark.Id].PostAsync(stampReq, cancellationToken: ct);
                                 postMessageStampRequestPool.Return(stampReq);
                                 return true;
                             }
@@ -188,7 +188,7 @@ namespace BotTidus.Services.InteractiveBot
                             {
                                 var mesReq = postMessageRequestPool.Get();
                                 (mesReq.Content, mesReq.Embed) = (result.Message, false);
-                                await traq.MessageApi.PostMessageAsync(message.ChannelId, mesReq, ct);
+                                await traq.Channels[message.ChannelId].Messages.PostAsync(mesReq, cancellationToken: ct);
                                 postMessageRequestPool.Return(mesReq);
                                 return true;
                             }
@@ -218,8 +218,8 @@ namespace BotTidus.Services.InteractiveBot
 
                         try
                         {
-                            await traq.BotApi.LetBotJoinChannelAsync(_botOptions.Id, joinReq, ct);
-                            await traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.WhiteCheckMark.Id, stampReq, ct);
+                            await traq.Bots[_botOptions.Id].Actions.Join.PostAsync(joinReq, cancellationToken: ct);
+                            await traq.Messages[message.Id].Stamps[Constants.TraqStamps.WhiteCheckMark.Id].PostAsync(stampReq, cancellationToken: ct);
                         }
                         catch (Exception e)
                         {
@@ -252,8 +252,8 @@ namespace BotTidus.Services.InteractiveBot
 
                         try
                         {
-                            await traq.BotApi.LetBotLeaveChannelAsync(_botOptions.Id, leaveReq, ct);
-                            await traq.StampApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Wave.Id, stampReq, ct);
+                            await traq.Bots[_botOptions.Id].Actions.Leave.PostAsync(leaveReq, cancellationToken: ct);
+                            await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Wave.Id].PostAsync(stampReq, cancellationToken: ct);
                         }
                         catch (Exception e)
                         {
@@ -285,19 +285,19 @@ namespace BotTidus.Services.InteractiveBot
                 case CommandErrorType.InternalError:
                     {
                         _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
-                        await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Explosion.Id, req, ct);
+                        await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Explosion.Id].PostAsync(req, cancellationToken: ct);
                         break;
                     }
                 case CommandErrorType.PermissionDenied:
                     {
                         _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
-                        await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.NoEntrySign.Id, req, ct);
+                        await traq.Messages[message.Id].Stamps[Constants.TraqStamps.NoEntrySign.Id].PostAsync(req, cancellationToken: ct);
                         break;
                     }
                 default:
                     {
                         _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
-                        await traq.MessageApi.AddMessageStampAsync(message.Id, Constants.TraqStamps.Question.Id, req, ct);
+                        await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Question.Id].PostAsync(req, cancellationToken: ct);
                         break;
                     }
             }

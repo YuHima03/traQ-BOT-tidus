@@ -11,17 +11,17 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PublishAot>true</PublishAot>
+    <PublishAot Condition="'$(Configuration)'=='Release'">true</PublishAot>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
     <OptimizationPreference>speed</OptimizationPreference>
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyVersion>0.6.0.0</AssemblyVersion>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.18">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -33,18 +33,18 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="System.Linq.Async" Version="6.0.3" />
     <PackageReference Include="System.Runtime.Caching" Version="9.0.7" />
-    <PackageReference Include="Traq" Version="0.4.0" />
     <PackageReference Include="Traq.Bot" Version="0.3.0" />
     <PackageReference Include="Yuh.Collections" Version="1.0.0-rc.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BotTidus.RepositoryImpl\BotTidus.RepositoryImpl.csproj" />
+    <ProjectReference Include="..\BotTidus.Infrastructure\BotTidus.Infrastructure.csproj" />
     <ProjectReference Include="..\..\libs\dotnet-traq-extensions\src\Traq.Extensions.Messages\Traq.Extensions.Messages.csproj" />
+    <ProjectReference Include="..\..\libs\dotnet-traq\src\Traq\Traq.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ConsoleCommand\" />
+    <Content Include="$(SolutionDir)/appsettings*.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
 </Project>

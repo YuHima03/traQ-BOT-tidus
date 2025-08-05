@@ -13,7 +13,7 @@ namespace BotTidus.Services
 
         DateTimeOffset _lastCollectedAt = DateTimeOffset.UtcNow;
 
-        protected Traq.ITraqApiClient Client { get; } = services.GetRequiredService<Traq.ITraqApiClient>();
+        protected Traq.TraqApiClient Client { get; } = services.GetRequiredService<Traq.TraqApiClient>();
 
         protected sealed override async ValueTask ExecuteCoreAsync(CancellationToken ct)
         {
@@ -25,14 +25,24 @@ namespace BotTidus.Services
 
             try
             {
-                var timeline = await Client.ActivityApi.GetActivityTimelineAsync(limit: 50, all: true, cancellationToken: ct);
+                Traq.Activity.Timeline.TimelineRequestBuilder.TimelineRequestBuilderGetQueryParameters query = new()
+                {
+                    All = true,
+                    Limit = 50
+                };
+                var timeline = await Client.Activity.Timeline.GetAsync(conf => conf.QueryParameters = query, ct);
+                if (timeline is null)
+                {
+                    _logger.LogError("Failed to fetch activity timeline.");
+                    return;
+                }
                 var messages = timeline.TakeWhile(m => m.CreatedAt > _lastCollectedAt).ToArray();
 
                 _logger.LogDebug("Collected {Count} messages.", messages.Length);
 
                 if (messages.Length != 0)
                 {
-                    _lastCollectedAt = messages[0].CreatedAt;
+                    _lastCollectedAt = messages[0].CreatedAt!.Value;
                     await OnCollectAsync(messages, ct);
                 }
 
@@ -44,6 +54,6 @@ namespace BotTidus.Services
             }
         }
 
-        protected abstract ValueTask OnCollectAsync(Traq.Model.ActivityTimelineMessage[] messages, CancellationToken ct);
+        protected abstract ValueTask OnCollectAsync(Traq.Models.ActivityTimelineMessage[] messages, CancellationToken ct);
     }
 }
