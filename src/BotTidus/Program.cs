@@ -86,7 +86,6 @@ namespace BotTidus
                     {
                         var connStr = sp.GetRequiredService<IOptions<DbConnectionOptions>>().Value.GetConnectionString();
                         ob.UseMySql(connStr, MySqlServerVersion.LatestSupportedServerVersion);
-                        ob.UseModel(RepositoryImpl.CompiledModels.RepositoryModel.Instance);
                         if (ctx.HostingEnvironment.IsDevelopment())
                         {
                             ob.EnableSensitiveDataLogging();
