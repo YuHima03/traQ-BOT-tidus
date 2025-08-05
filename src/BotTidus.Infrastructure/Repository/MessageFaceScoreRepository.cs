@@ -38,7 +38,7 @@ namespace BotTidus.Infrastructure.Repository
 
                 if (current is null)
                 {
-                    _ = await MessageFaceScores.AddAsync(new MessageFaceScore_Repo()
+                    await MessageFaceScores.AddAsync(new MessageFaceScore_Repo()
                     {
                         MessageId = updated.MessageId,
                         UserId = updated.AuthorId,
@@ -47,6 +47,7 @@ namespace BotTidus.Infrastructure.Repository
                         PositivePhraseCount = updated.PositivePhraseCount,
                         PositiveReactionCount = updated.PositiveReactionCount
                     }, ct);
+                    await SaveChangesAsync(ct);
                 }
                 else
                 {
