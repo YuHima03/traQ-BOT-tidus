@@ -9,13 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Traq.Extensions.Messages", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Domain", "src\BotTidus.Domain\BotTidus.Domain.csproj", "{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ソリューション項目", "ソリューション項目", "{2022CB0F-8BAF-F49E-0C48-8EF4C96EC109}"
-	ProjectSection(SolutionItems) = preProject
-		appsettings.Development.json = appsettings.Development.json
-		appsettings.json = appsettings.json
-		appsettings.Production.json = appsettings.Production.json
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Traq", "libs\dotnet-traq\src\Traq\Traq.csproj", "{2B39A528-CD04-B892-15E9-E89AAB90C0E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Infrastructure", "src\BotTidus.Infrastructure\BotTidus.Infrastructure.csproj", "{00B0C4B0-F9BB-4810-99C1-0E849B8C997C}"

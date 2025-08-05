@@ -22,18 +22,16 @@ RUN git checkout aot
 FROM with-libs AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["src/BotTidus/BotTidus.csproj", "src/BotTidus/"]
-RUN dotnet restore "./src/BotTidus/BotTidus.csproj"
 COPY . .
-WORKDIR "/src/src/BotTidus"
-RUN dotnet build "./BotTidus.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet restore "./src/BotTidus/BotTidus.csproj"
+RUN dotnet build "./src/BotTidus/BotTidus.csproj" -c ${BUILD_CONFIGURATION}
 
 # Publish the service project to copy to the final stage.
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./BotTidus.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-COPY ["appsettings.json", "/app/publish/"]
-COPY ["appsettings.*.json", "/app/publish/"]
+ARG TARGET_FRAMEWORK=net9.0
+WORKDIR /src
+RUN dotnet publish -c ${BUILD_CONFIGURATION} -f ${TARGET_FRAMEWORK} -o /app/publish /p:UseAppHost=false
 
 # Provide application binary.
 FROM base AS final

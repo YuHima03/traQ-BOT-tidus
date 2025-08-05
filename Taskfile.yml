@@ -27,19 +27,20 @@ tasks:
       - cd dotnet-traq-extensions && git pull
       - cd dotnet-traq && git pull
 
-  dev-up:
+  build:
+    desc: Build the docker image of the project.
     cmds:
-    - docker compose up -d --build
+      - docker compose build bot --no-cache
 
-  dev-down:
+  up:
+    desc: Start the docker containers of the project.
     cmds:
-    - docker compose down
+      - docker compose up -d
 
-  dev-restart:
+  down:
+    desc: Stop the docker containers of the project.
     cmds:
-    - docker compose build
-    - task: down
-    - task: up
+      - docker compose down
 
   ef-generate-models:
     desc: Precompiles model types used by the DbContext class.

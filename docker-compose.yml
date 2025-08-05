@@ -3,7 +3,7 @@ services:
   bot:
     build:
       context: ./
-      dockerfile: ./src/BotTidus/Dockerfile
+      dockerfile: ./Dockerfile
     environment:
       DOTNET_ENVIRONMENT: Development
     env_file:
