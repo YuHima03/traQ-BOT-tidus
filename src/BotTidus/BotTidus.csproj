@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ConsoleCommand\" />
+    <Content Include="$(SolutionDir)/appsettings*.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
 </Project>
