@@ -26,9 +26,17 @@ namespace BotTidus.Infrastructure.Repository
             await using var tx = await Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, ct);
             try
             {
-                var currentEntity = await MessageFaceScores.FindAsync([messageId], ct);
-                var updated = await configureAsync.Invoke(currentEntity?.ToDomain(), ct);
-                if (currentEntity is null)
+                var ctx = this;
+                var mid = messageId;
+                var current = await ctx.MessageFaceScores
+                    .AsNoTracking()
+                    .Where(s => s.MessageId == mid)
+                    .Select(MessageFaceScoreExtensions.ToDomainExpression)
+                    .AsAsyncEnumerable()
+                    .FirstOrDefaultAsync(ct);
+                var updated = await configureAsync(current, ct);
+
+                if (current is null)
                 {
                     _ = await MessageFaceScores.AddAsync(new MessageFaceScore_Repo()
                     {
@@ -42,14 +50,25 @@ namespace BotTidus.Infrastructure.Repository
                 }
                 else
                 {
-                    currentEntity.MessageId = updated.MessageId;
-                    currentEntity.UserId = updated.AuthorId;
-                    currentEntity.NegativePhraseCount = updated.NegativePhraseCount;
-                    currentEntity.NegativeReactionCount = updated.NegativeReactionCount;
-                    currentEntity.PositivePhraseCount = updated.PositivePhraseCount;
-                    currentEntity.PositiveReactionCount = updated.PositiveReactionCount;
+                    var rowsAffected = await Task.Run(() =>
+                    {
+                        var (np, nr, pp, pr) = (updated.NegativePhraseCount, updated.NegativeReactionCount, updated.PositivePhraseCount, updated.PositiveReactionCount);
+                        var uid = updated.AuthorId;
+                        return ctx.MessageFaceScores
+                            .Where(s => s.MessageId == mid)
+                            .ExecuteUpdate(s => s
+                                .SetProperty(m => m.NegativePhraseCount, np)
+                                .SetProperty(m => m.NegativeReactionCount, nr)
+                                .SetProperty(m => m.PositivePhraseCount, pp)
+                                .SetProperty(m => m.PositiveReactionCount, pr)
+                                .SetProperty(m => m.UserId, uid));
+                    }, ct);
+
+                    if (rowsAffected == 0)
+                    {
+                        throw new Exception($"Failed to update face score of the message {messageId}.");
+                    }
                 }
-                await SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
                 return updated;
             }
@@ -60,14 +79,17 @@ namespace BotTidus.Infrastructure.Repository
             }
         }
 
-        public async ValueTask DeleteMessageFaceScoreAsync(Guid messageId, CancellationToken ct)
+        public ValueTask DeleteMessageFaceScoreAsync(Guid messageId, CancellationToken ct)
         {
-            var ctx = this;
-            var mid = messageId;
-            await ctx.MessageFaceScores
-                .AsNoTracking()
-                .Where(s => s.MessageId == mid)
-                .ExecuteDeleteAsync();
+            return new(Task.Run(() =>
+            {
+                var ctx = this;
+                var mid = messageId;
+                ctx.MessageFaceScores
+                    .AsNoTracking()
+                    .Where(s => s.MessageId == mid)
+                    .ExecuteDelete();
+            }, ct));
         }
 
         public async ValueTask<MessageFaceScore> GetMessageFaceScoreAsync(Guid messageId, CancellationToken ct)
