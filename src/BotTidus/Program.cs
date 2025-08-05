@@ -72,7 +72,7 @@ namespace BotTidus
                         .AddObjectPool<Traq.Models.PostMessageStampRequest>();
 
                     services.AddHealthChecks()
-                        .AddMySqlWithDbContext<RepositoryImpl.Repository>()
+                        .AddMySqlWithDbContext<Infrastructure.Repository.BotDbContext>()
                         .AddTypedHostedService<FaceCollectingService>()
                         .AddTypedHostedService<FaceReactionCollectingService>()
                         .AddTypedHostedService<StampRankingService>()
@@ -82,17 +82,16 @@ namespace BotTidus
                     services.AddSingleton<HealthCheckPublisher>().AddSingleton<IHealthCheckPublisher, HealthCheckPublisher>(static sp => sp.GetRequiredService<HealthCheckPublisher>());
                     services.AddSingleton<TraqHealthCheckPublisher>();
 
-                    services.AddDbContextFactory<RepositoryImpl.Repository>((sp, ob) =>
+                    services.AddDbContextFactory<Infrastructure.Repository.BotDbContext>((sp, ob) =>
                     {
                         var connStr = sp.GetRequiredService<IOptions<DbConnectionOptions>>().Value.GetConnectionString();
                         ob.UseMySql(connStr, MySqlServerVersion.LatestSupportedServerVersion);
-                        ob.UseModel(RepositoryImpl.CompiledModels.RepositoryModel.Instance);
                         if (ctx.HostingEnvironment.IsDevelopment())
                         {
                             ob.EnableSensitiveDataLogging();
                         }
                     });
-                    services.AddSingleton<IRepositoryFactory, RepositoryImpl.RepositoryFactory>(sp => new(sp.GetRequiredService<IDbContextFactory<RepositoryImpl.Repository>>()));
+                    services.AddSingleton<IRepositoryFactory, Infrastructure.Repository.BotDbContextDefaultFactory>();
 
                     services.AddSingleton(GetDefaultTimeZoneInfo(ctx.Configuration));
 

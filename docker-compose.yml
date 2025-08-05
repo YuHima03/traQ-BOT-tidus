@@ -5,7 +5,7 @@ services:
       context: ./
       dockerfile: ./src/BotTidus/Dockerfile
     environment:
-      ON_DOCKER: "true"
+      DOTNET_ENVIRONMENT: Development
     env_file:
       - ./.env
       - ./src/BotTidus/.env
