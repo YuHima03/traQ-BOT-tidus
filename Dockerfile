@@ -9,13 +9,13 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:10.0-preview-alpine-aot AS with-libs
 RUN apk update
 RUN apk add --no-cache git
-WORKDIR /libs
+WORKDIR /src/libs
 RUN git clone https://github.com/YuHima03/dotnet-traq-extensions.git
-WORKDIR /libs/dotnet-traq-extensions
+WORKDIR /src/libs/dotnet-traq-extensions
 RUN git checkout feat/message-extensions
-WORKDIR /libs
+WORKDIR /src/libs
 RUN git clone https://github.com/YuHima03/dotnet-traq.git
-WORKDIR /libs/dotnet-traq
+WORKDIR /src/libs/dotnet-traq
 RUN git checkout aot
 
 # Build the service project.

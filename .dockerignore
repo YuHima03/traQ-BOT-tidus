@@ -29,5 +29,8 @@ README.md
 !.git/packed-refs
 !.git/refs/heads/**
 
+# Ignore external libraries
+libs
+
 # Ignore generated cs files
 **/*.g.cs
