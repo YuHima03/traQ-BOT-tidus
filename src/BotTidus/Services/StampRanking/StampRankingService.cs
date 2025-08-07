@@ -16,7 +16,7 @@ namespace BotTidus.Services.StampRanking
         TimeZoneInfo timeZoneInfo,
         IServiceProvider services
         )
-        : DailyMessageCollectingService(services, TimeSpan.FromSeconds(10)), // Wait until next 09:00:00(JST)
+        : DailyMessageCollectingService(services, GetTimeoutUntilNext0900JST(timeZoneInfo)), // Wait until next 09:00:00(JST)
           IHealthCheck
     {
         readonly Guid _postChannelId = options.Value.PostChannelId;
