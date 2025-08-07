@@ -4,7 +4,7 @@ namespace BotTidus.Helpers
 {
     static class TraqHelper
     {
-        const int MaxSearchMessageLimit = 1_000_000;
+        const int MaxSearchMessageLimit = 20_000;
 
         public static async ValueTask AddManyMessageStampAsync(this Traq.Messages.MessagesRequestBuilder messages, Guid messageId, Guid stampId, int count, CancellationToken ct)
         {
@@ -61,10 +61,15 @@ namespace BotTidus.Helpers
                 Offset = 0,
                 SortAsGetSortQueryParameterType = null
             };
+            Action<Microsoft.Kiota.Abstractions.RequestConfiguration<Traq.Messages.MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters>> requestConfigurator = (conf) =>
+            {
+                conf.QueryParameters = queryParams;
+            };
+
             List<Traq.Models.Message> result = [];
             for (int requestCount = 0; requestCount < MaxSearchMessageLimit / 100; requestCount++)
             {
-                var reqRes = await messages.GetAsMessagesGetResponseAsync(conf => conf.QueryParameters = queryParams, ct);
+                var reqRes = await messages.GetAsMessagesGetResponseAsync(requestConfigurator, ct);
                 if (reqRes?.Hits?.Count is not > 0)
                 {
                     return result;
@@ -74,7 +79,7 @@ namespace BotTidus.Helpers
                 {
                     return result;
                 }
-                before = result[^1].CreatedAt!.Value - TimeSpan.FromMicroseconds(1);
+                queryParams.Before = result[^1].CreatedAt!.Value - TimeSpan.FromMicroseconds(1);
             }
             throw new Exception("Exceeded maximum search message limit.");
         }
