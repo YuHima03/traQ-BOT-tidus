@@ -16,7 +16,7 @@ namespace BotTidus.Services.StampRanking
         TimeZoneInfo timeZoneInfo,
         IServiceProvider services
         )
-        : DailyMessageCollectingService(services, TimeHelper.GetTimeSpanUntilNextTime(TimeOnly.MinValue)), // Wait until next 09:00:00(JST)
+        : DailyMessageCollectingService(services, TimeSpan.FromSeconds(10)), // Wait until next 09:00:00(JST)
           IHealthCheck
     {
         readonly Guid _postChannelId = options.Value.PostChannelId;
@@ -33,11 +33,17 @@ namespace BotTidus.Services.StampRanking
         protected override async ValueTask OnCollectAsync(IList<Message> messages, CancellationToken ct)
         {
             var stampNameMap = (await traq.Stamps.GetAsync(cancellationToken: ct) ?? []).ToDictionary(s => s.Id!.Value, s => s.Name!);
-            var stampCount = messages.SelectMany(m => m.Stamps ?? [])
+            var stampCount = messages
+                .AsValueEnumerable()
+                .SelectMany(m => m.Stamps ?? [])
                 .Where(s => s.StampId.HasValue)!
                 .GroupBy(s => s.StampId!.Value)
                 .ToDictionary(g => g.Key, ms => ms.Sum(s => s.Count ?? 0));
-            var top50stamps = stampCount.OrderByDescending(kv => kv.Value).TakeWhile(kv => kv.Value > 0).Take(50);
+            var top50stamps = stampCount
+                .AsValueEnumerable()
+                .OrderByDescending(kv => kv.Value)
+                .TakeWhile(kv => kv.Value > 0)
+                .Take(50);
 
             var yesterday = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneInfo).Date.AddDays(-1);
             StringBuilder sb = new($"""
