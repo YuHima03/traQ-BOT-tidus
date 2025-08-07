@@ -6,7 +6,7 @@
     },
     "BotTidus": {
       "commandName": "Project",
-      "commandLineArgs": "--env-files .env;src/BotTidus/.env",
+      "commandLineArgs": "--env-files .env",
       "workingDirectory": "$(SolutionDir)",
       "environmentVariables": {
         "ON_DOCKER": "false",
