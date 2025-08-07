@@ -40,13 +40,11 @@ namespace BotTidus.Helpers
             ArgumentOutOfRangeException.ThrowIfNegative(limit);
             ArgumentOutOfRangeException.ThrowIfGreaterThan(limit, MaxSearchMessageLimit);
 
-            var before = query.Before ?? DateTimeOffset.UtcNow;
-
             Traq.Messages.MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters queryParams = new()
             {
                 Word = query.Word,
                 After = query.After,
-                Before = before,
+                Before = query.Before ?? DateTimeOffset.UtcNow,
                 In = query.ChannelId,
                 To = query.MentionedUsersId is not null ? [.. query.MentionedUsersId] : [],
                 From = query.AuthorsId is not null ? [.. query.AuthorsId] : [],
