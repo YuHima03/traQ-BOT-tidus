@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyVersion>3.0.2.0</AssemblyVersion>
+    <AssemblyVersion>3.0.3.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
