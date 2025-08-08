@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using System.Text;
 using Traq;
 using Traq.Models;
+using ZLinq;
 
 namespace BotTidus.Services.StampRanking
 {
