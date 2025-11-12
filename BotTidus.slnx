@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/SolutionItem/">
+    <File Path=".gitignore" />
+    <File Path="docker-compose.yml" />
+    <File Path="Dockerfile" />
+    <File Path="Taskfile.yml" />
+  </Folder>
+  <Project Path="src/BotTidus.Domain/BotTidus.Domain.csproj" />
+  <Project Path="src/BotTidus.Infrastructure/BotTidus.Infrastructure.csproj" />
+  <Project Path="src/BotTidus/BotTidus.csproj" />
+</Solution>
