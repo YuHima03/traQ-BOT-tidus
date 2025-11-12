@@ -1,19 +1,18 @@
-﻿namespace BotTidus.ConsoleCommand
+﻿namespace BotTidus.ConsoleCommand;
+
+enum CommandErrorType : byte
 {
-    enum CommandErrorType : byte
-    {
-        None = 0,
-        UnknownCommand,
-        InvalidArguments,
-        InternalError,
-        PermissionDenied,
-        Unknown,
-    }
+    None = 0,
+    UnknownCommand,
+    InvalidArguments,
+    InternalError,
+    PermissionDenied,
+    Unknown,
+}
 
-    interface ICommandResult
-    {
-        public bool IsSuccessful { get; }
+interface ICommandResult
+{
+    bool IsSuccessful { get; }
 
-        public CommandErrorType ErrorType { get; }
-    }
+    CommandErrorType ErrorType { get; }
 }

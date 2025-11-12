@@ -3,74 +3,73 @@ using BotTidus.ConsoleCommand;
 using Microsoft.Extensions.Options;
 using Traq;
 
-namespace BotTidus.Services.InteractiveBot.CommandHandlers
+namespace BotTidus.Services.InteractiveBot.CommandHandlers;
+
+/// <summary>
+/// <code>
+/// /rmmsg &lt;MESSAGE_ID&gt;
+/// </code>
+/// </summary>
+sealed class DeleteMessageCommandHandler(Guid senderId, TraqApiClient traq, IOptions<TraqBotOptions> botOptions) : IAsyncConsoleCommandHandler<DeleteMessageCommandResult>
 {
-    /// <summary>
-    /// <code>
-    /// /rmmsg &lt;MESSAGE_ID&gt;
-    /// </code>
-    /// </summary>
-    sealed class DeleteMessageCommandHandler(Guid senderId, TraqApiClient traq, IOptions<TraqBotOptions> botOptions) : IAsyncConsoleCommandHandler<DeleteMessageCommandResult>
+    Guid _messageId;
+
+    public bool RequiredArgumentsAreFilled => _messageId != Guid.Empty;
+
+    public async ValueTask<DeleteMessageCommandResult> ExecuteAsync(CancellationToken cancellationToken)
     {
-        Guid _messageId;
-
-        public bool RequiredArgumentsAreFilled => _messageId != Guid.Empty;
-
-        public async ValueTask<DeleteMessageCommandResult> ExecuteAsync(CancellationToken cancellationToken)
+        try
         {
-            try
+            if (senderId != botOptions.Value.AdminUserId)
             {
-                if (senderId != botOptions.Value.AdminUserId)
+                return new DeleteMessageCommandResult
                 {
-                    return new DeleteMessageCommandResult
-                    {
-                        IsSuccessful = false,
-                        ErrorType = CommandErrorType.PermissionDenied
-                    };
-                }
-                if (_messageId == Guid.Empty)
-                {
-                    return new DeleteMessageCommandResult
-                    {
-                        IsSuccessful = false,
-                        Message = "Message ID is not specified.",
-                        ErrorType = CommandErrorType.InvalidArguments
-                    };
-                }
-                await traq.Messages[_messageId].DeleteAsync(cancellationToken: cancellationToken);
-                return new DeleteMessageCommandResult { IsSuccessful = true };
+                    IsSuccessful = false,
+                    ErrorType = CommandErrorType.PermissionDenied
+                };
             }
-            catch (Exception e)
+            if (_messageId == Guid.Empty)
             {
-                return new DeleteMessageCommandResult { IsSuccessful = false, Message = e.Message, ErrorType = CommandErrorType.InternalError };
+                return new DeleteMessageCommandResult
+                {
+                    IsSuccessful = false,
+                    Message = "Message ID is not specified.",
+                    ErrorType = CommandErrorType.InvalidArguments
+                };
             }
+            await traq.Messages[_messageId].DeleteAsync(cancellationToken: cancellationToken);
+            return new DeleteMessageCommandResult { IsSuccessful = true };
         }
-
-        public bool TryReadArguments(ConsoleCommandReader reader)
+        catch (Exception e)
         {
-            if (!reader.NextValueOnly(out var idOrUri))
-            {
-                return false;
-            }
-            if (Guid.TryParse(idOrUri, out _messageId))
-            {
-                return true;
-            }
-            else if (Uri.TryCreate(idOrUri.ToString(), UriKind.RelativeOrAbsolute, out var uri)
-                && Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out _messageId))
-            {
-                return true;
-            }
-            _messageId = Guid.Empty;
+            return new DeleteMessageCommandResult { IsSuccessful = false, Message = e.Message, ErrorType = CommandErrorType.InternalError };
+        }
+    }
+
+    public bool TryReadArguments(ConsoleCommandReader reader)
+    {
+        if (!reader.NextValueOnly(out var idOrUri))
+        {
             return false;
         }
+        if (Guid.TryParse(idOrUri, out _messageId))
+        {
+            return true;
+        }
+        else if (Uri.TryCreate(idOrUri.ToString(), UriKind.RelativeOrAbsolute, out var uri)
+            && Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out _messageId))
+        {
+            return true;
+        }
+        _messageId = Guid.Empty;
+        return false;
     }
+}
 
-    readonly struct DeleteMessageCommandResult : ICommandResult
-    {
-        public bool IsSuccessful { get; init; }
-        public string? Message { get; init; }
-        public CommandErrorType ErrorType { get; init; }
-        public override string? ToString() => Message;
-    }
+readonly struct DeleteMessageCommandResult : ICommandResult
+{
+    public bool IsSuccessful { get; init; }
+    public string? Message { get; init; }
+    public CommandErrorType ErrorType { get; init; }
+    public override string? ToString() => Message;
 }
