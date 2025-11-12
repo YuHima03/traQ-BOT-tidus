@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace BotTidus.Services
 {
-    internal abstract class RecentMessageCollectingService(IServiceProvider services, TimeSpan interval)
+    abstract class RecentMessageCollectingService(IServiceProvider services, TimeSpan interval)
         : PeriodicBackgroundService(Options.Create(new PeriodicBackgroundServiceOptions { Delay = TimeSpan.FromSeconds(15), Period = interval }))
     {
         readonly ILogger<RecentMessageCollectingService> _logger = services.GetRequiredService<ILogger<RecentMessageCollectingService>>();

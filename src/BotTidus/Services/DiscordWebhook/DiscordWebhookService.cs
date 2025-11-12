@@ -13,7 +13,7 @@ using Traq.Models;
 
 namespace BotTidus.Services.DiscordWebhook
 {
-    internal class DiscordWebhookService(
+    class DiscordWebhookService(
         IRepositoryFactory repositoryFactory,
         TraqApiClient traq,
         IOptions<TraqBotOptions> botOptions,

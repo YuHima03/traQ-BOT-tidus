@@ -8,7 +8,7 @@ using Traq.Models;
 
 namespace BotTidus.Services.FaceCollector
 {
-    internal sealed class FaceCollectingService(
+    sealed class FaceCollectingService(
         IOptions<TraqBotOptions> botOptions,
         IRepositoryFactory repoFactory,
         TraqHealthCheckPublisher traqHealthCheck,

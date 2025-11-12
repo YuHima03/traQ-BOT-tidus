@@ -1,72 +1,71 @@
-﻿using BotTidus.ConsoleCommand;
+﻿using System.Text;
+using BotTidus.ConsoleCommand;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
-using System.Text;
 
-namespace BotTidus.Services.InteractiveBot.CommandHandlers
+namespace BotTidus.Services.InteractiveBot.CommandHandlers;
+
+readonly struct StatusCommandHandler(HealthCheckService healthCheckService, IHostEnvironment hostEnv) : IAsyncConsoleCommandHandler<StatusCommandResult>
 {
-    readonly struct StatusCommandHandler(HealthCheckService healthCheckService, IHostEnvironment hostEnv) : IAsyncConsoleCommandHandler<StatusCommandResult>
+    readonly HealthCheckService _healthCheckService = healthCheckService;
+
+    public bool RequiredArgumentsAreFilled => true;
+
+    public async ValueTask<StatusCommandResult> ExecuteAsync(CancellationToken cancellationToken)
     {
-        readonly HealthCheckService _healthCheckService = healthCheckService;
-
-        public bool RequiredArgumentsAreFilled => true;
-
-        public async ValueTask<StatusCommandResult> ExecuteAsync(CancellationToken cancellationToken)
+        try
         {
-            try
+            var reports = await _healthCheckService.CheckHealthAsync(cancellationToken);
+            StringBuilder sb = new($"""
+                Environment: `{hostEnv.EnvironmentName}`
+
+                | Name | Status | Description |
+                | :--- | :----: | :---------- |
+                """);
+            sb.AppendLine();
+
+            foreach (var (name, entry) in reports.Entries)
             {
-                var reports = await _healthCheckService.CheckHealthAsync(cancellationToken);
-                StringBuilder sb = new($"""
-                    Environment: `{hostEnv.EnvironmentName}`
-
-                    | Name | Status | Description |
-                    | :--- | :----: | :---------- |
-                    """);
-                sb.AppendLine();
-
-                foreach (var (name, entry) in reports.Entries)
+                var statusBadge = entry.Status switch
                 {
-                    var statusBadge = entry.Status switch
-                    {
-                        HealthStatus.Healthy => ":white_check_mark:",
-                        HealthStatus.Degraded => ":warning:",
-                        HealthStatus.Unhealthy => ":x:",
-                        _ => ""
-                    };
-                    sb.AppendLine($"| `{name}` | {statusBadge} | {entry.Description} |");
-                }
-
-                return new StatusCommandResult()
-                {
-                    IsSuccessful = true,
-                    Message = sb.ToString()
+                    HealthStatus.Healthy => ":white_check_mark:",
+                    HealthStatus.Degraded => ":warning:",
+                    HealthStatus.Unhealthy => ":x:",
+                    _ => ""
                 };
+                sb.AppendLine($"| `{name}` | {statusBadge} | {entry.Description} |");
             }
-            catch (Exception ex)
+
+            return new StatusCommandResult()
             {
-                return new StatusCommandResult()
-                {
-                    IsSuccessful = false,
-                    Message = ex.Message,
-                    ErrorType = CommandErrorType.InternalError
-                };
-            }
+                IsSuccessful = true,
+                Message = sb.ToString()
+            };
         }
-
-        public bool TryReadArguments(ConsoleCommandReader reader)
+        catch (Exception ex)
         {
-            return reader.EnumeratedAll;
+            return new StatusCommandResult()
+            {
+                IsSuccessful = false,
+                Message = ex.Message,
+                ErrorType = CommandErrorType.InternalError
+            };
         }
     }
 
-    readonly struct StatusCommandResult : ICommandResult
+    public bool TryReadArguments(ConsoleCommandReader reader)
     {
-        public bool IsSuccessful { get; init; }
-
-        public string? Message { get; init; }
-
-        public CommandErrorType ErrorType { get; init; }
-
-        public override string? ToString() => Message;
+        return reader.EnumeratedAll;
     }
+}
+
+readonly struct StatusCommandResult : ICommandResult
+{
+    public bool IsSuccessful { get; init; }
+
+    public string? Message { get; init; }
+
+    public CommandErrorType ErrorType { get; init; }
+
+    public override string? ToString() => Message;
 }

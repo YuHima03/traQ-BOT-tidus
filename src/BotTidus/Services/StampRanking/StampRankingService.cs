@@ -10,7 +10,7 @@ using ZLinq;
 
 namespace BotTidus.Services.StampRanking
 {
-    internal class StampRankingService(
+    class StampRankingService(
         ILogger<StampRankingService> logger,
         IOptions<StampRankingServiceOptions> options,
         TraqApiClient traq,

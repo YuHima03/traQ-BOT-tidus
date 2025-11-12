@@ -1,44 +1,43 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace BotTidus.Services
+namespace BotTidus.Services;
+
+abstract class PeriodicBackgroundService(
+    IOptions<PeriodicBackgroundServiceOptions> options
+    ) : BackgroundService
 {
-    abstract class PeriodicBackgroundService(
-        IOptions<PeriodicBackgroundServiceOptions> options
-        ) : BackgroundService
-    {
-        readonly PeriodicBackgroundServiceOptions _options = options.Value;
+    readonly PeriodicBackgroundServiceOptions _options = options.Value;
 
-        protected sealed override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected sealed override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        try
         {
-            try
+            await Task.Delay(_options.Delay, stoppingToken);
+            using PeriodicTimer timer = new(_options.Period);
+            do
             {
-                await Task.Delay(_options.Delay, stoppingToken);
-                using PeriodicTimer timer = new(_options.Period);
-                do
-                {
-                    await ExecuteCoreAsync(stoppingToken);
-                }
-                while (await timer.WaitForNextTickAsync(stoppingToken));
+                await ExecuteCoreAsync(stoppingToken);
             }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
+            while (await timer.WaitForNextTickAsync(stoppingToken));
         }
-
-        protected abstract ValueTask ExecuteCoreAsync(CancellationToken ct);
+        catch (OperationCanceledException)
+        {
+            return;
+        }
     }
 
-    interface IPeriodicBackgroundServiceOptions
-    {
-        TimeSpan Delay { get; }
-        TimeSpan Period { get; }
-    }
+    protected abstract ValueTask ExecuteCoreAsync(CancellationToken ct);
+}
 
-    class PeriodicBackgroundServiceOptions : IPeriodicBackgroundServiceOptions
-    {
-        public TimeSpan Delay { get; set; }
-        public TimeSpan Period { get; set; }
-    }
+interface IPeriodicBackgroundServiceOptions
+{
+    TimeSpan Delay { get; }
+    TimeSpan Period { get; }
+}
+
+class PeriodicBackgroundServiceOptions : IPeriodicBackgroundServiceOptions
+{
+    public TimeSpan Delay { get; set; }
+    public TimeSpan Period { get; set; }
 }

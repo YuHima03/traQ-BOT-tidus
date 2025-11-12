@@ -8,7 +8,7 @@ using Traq;
 
 namespace BotTidus.Services
 {
-    internal abstract class DailyMessageCollectingService : PeriodicBackgroundService
+    abstract class DailyMessageCollectingService : PeriodicBackgroundService
     {
         readonly IMemoryCache _cache;
         readonly ILogger<DailyMessageCollectingService> _logger;
