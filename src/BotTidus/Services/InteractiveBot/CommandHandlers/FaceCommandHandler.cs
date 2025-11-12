@@ -102,13 +102,11 @@ struct FaceCommandHandler(TraqBotOptions botOptions, IMemoryCache cache, BotEven
                         return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "Message id or uri is required." };
                     }
 
-                    if (!Guid.TryParse(_messageIdOrUri, out Guid messageId))
+                    if (!Guid.TryParse(_messageIdOrUri, out Guid messageId)
+                        && (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
+                            || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId)))
                     {
-                        if (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
-                            || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId))
-                        {
-                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = $"Invalid message uri: {_messageIdOrUri}" };
-                        }
+                        return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = $"Invalid message uri: {_messageIdOrUri}" };
                     }
                     await Task.WhenAll(
                         repo.DeleteMessageFaceScoreAsync(messageId, cancellationToken).AsTask(),
@@ -236,13 +234,11 @@ struct FaceCommandHandler(TraqBotOptions botOptions, IMemoryCache cache, BotEven
                         return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "Message id or uri is required." };
                     }
 
-                    if (!Guid.TryParse(_messageIdOrUri, out Guid messageId))
+                    if (!Guid.TryParse(_messageIdOrUri, out Guid messageId)
+                        && (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
+                            || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId)))
                     {
-                        if (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
-                            || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId))
-                        {
-                            return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = $"Invalid message uri: {_messageIdOrUri}" };
-                        }
+                        return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = $"Invalid message uri: {_messageIdOrUri}" };
                     }
 
                     (uint add, uint sub) = (_update_add ?? 0, _update_sub ?? 0);
@@ -343,16 +339,13 @@ struct FaceCommandHandler(TraqBotOptions botOptions, IMemoryCache cache, BotEven
         }
         else if (_subCommand == SubCommands.DisplayCount)
         {
-            if (reader.NextNamedArgument(out var arg))
+            if (reader.NextNamedArgument(out var arg) && arg.Name is "-u" or "--user")
             {
-                if (arg.Name is "-u" or "--user")
+                if (_username is not null)
                 {
-                    if (_username is not null)
-                    {
-                        return false;
-                    }
-                    _username = arg.Value.ToString();
+                    return false;
                 }
+                _username = arg.Value.ToString();
             }
         }
         else if (_subCommand == SubCommands.DisplayRanking)
