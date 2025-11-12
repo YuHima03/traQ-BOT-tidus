@@ -152,10 +152,12 @@ public partial class BotDbContext : IMessageFaceScoresRepository
             .Select(g => new UserFaceCount(
                 g.Key,
                 // Do not remove the cast (long) to avoid errors in EFCore pre-compilation.
-                (uint)g.Sum(s => s.NegativePhraseCount),
-                (uint)g.Sum(s => s.NegativeReactionCount),
-                (uint)g.Sum(s => s.PositivePhraseCount),
-                (uint)g.Sum(s => s.PositiveReactionCount)
+#pragma warning disable IDE0004
+                (uint)g.Sum(s => (long)s.NegativePhraseCount),
+                (uint)g.Sum(s => (long)s.NegativeReactionCount),
+                (uint)g.Sum(s => (long)s.PositivePhraseCount),
+                (uint)g.Sum(s => (long)s.PositiveReactionCount)
+#pragma warning restore IDE0004
             ))
             .AsAsyncEnumerable()
             .ToArrayAsync(ct);
