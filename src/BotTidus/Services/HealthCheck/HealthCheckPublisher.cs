@@ -28,7 +28,6 @@ sealed class HealthCheckPublisher(
             return;
         }
 
-        var lastEntries = LastReport?.Entries;
         var alertTargets = report.Entries.Where(kvp =>
         {
             var (name, entry) = kvp;
