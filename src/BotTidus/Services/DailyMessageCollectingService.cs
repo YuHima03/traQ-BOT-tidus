@@ -36,7 +36,7 @@ namespace BotTidus.Services
 
             if (_traqHealthCheck.CurrentStatus != TraqStatus.Available)
             {
-                _logger.LogWarning("The task (stamp ranking {Date:M/d}) is skipped because the traQ service is not available.", yesterdayStart);
+                MessageLogger.TaskSkippedDueToTraqIsUnavailable(_logger, yesterdayStart);
                 return;
             }
 
@@ -58,4 +58,10 @@ namespace BotTidus.Services
 
         protected abstract ValueTask OnCollectAsync(IList<Traq.Models.Message> messages, CancellationToken ct);
     }
+}
+
+static partial class MessageLogger
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "The task (stamp ranking {Date:M/d}) is skipped because the traQ service is not available.")]
+    public static partial void TaskSkippedDueToTraqIsUnavailable(ILogger logger, DateTime date);
 }

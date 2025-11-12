@@ -1,9 +1,9 @@
-﻿using BotTidus.Helpers;
+﻿using System.Text;
+using BotTidus.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Text;
 using Traq;
 using Traq.Models;
 using ZLinq;
@@ -60,7 +60,7 @@ namespace BotTidus.Services.StampRanking
             {
                 if (!stampNameMap.TryGetValue(stampId, out var stampName))
                 {
-                    logger.LogWarning("Unknown stamp: {}", stampId);
+                    MessageLogger.LogUnknownStamp(logger, stampId);
                     continue;
                 }
                 sb.AppendLine(prevCount == count
@@ -79,4 +79,10 @@ namespace BotTidus.Services.StampRanking
         [ConfigurationKeyName("STAMP_RANKING_CHANNEL_ID")]
         public Guid PostChannelId { get; set; }
     }
+}
+
+static partial class MessageLogger
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Unknown stamp: {StampId}")]
+    public static partial void LogUnknownStamp(ILogger logger, Guid stampId);
 }

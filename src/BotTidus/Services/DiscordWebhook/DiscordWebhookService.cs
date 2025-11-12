@@ -1,12 +1,12 @@
-﻿using BotTidus.Configurations;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text;
+using BotTidus.Configurations;
 using BotTidus.Domain;
 using BotTidus.Helpers;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
 using Traq;
 using Traq.Extensions.Messages;
 using Traq.Models;
@@ -196,7 +196,7 @@ namespace BotTidus.Services.DiscordWebhook
                         var res = await _httpClient.PostAsync(webhook.PostUrl, reqContent, ct);
                         if (!res.IsSuccessStatusCode)
                         {
-                            logger.LogWarning("Discord webhook returned {StatusCode} -> {Response}", res.StatusCode, res.Content);
+                            MessageLogger.LogDiscordWebhookResponse(logger, res.StatusCode, res.Content);
                         }
                     }
                     catch (Exception ex)
@@ -208,4 +208,10 @@ namespace BotTidus.Services.DiscordWebhook
             yield break;
         }
     }
+}
+
+static partial class MessageLogger
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Discord webhook returned {StatusCode} -> {Response}")]
+    public static partial void LogDiscordWebhookResponse(ILogger logger, System.Net.HttpStatusCode statusCode, HttpContent response);
 }

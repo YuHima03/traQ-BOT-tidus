@@ -59,7 +59,7 @@ namespace BotTidus.Services.FaceReactionCollector
                 }
 
                 await using var repo = await repoFactory.CreateRepositoryAsync(stoppingToken);
-                logger.LogDebug("Collected {Count} messages.", messages.Hits?.Count);
+                MessageLogger.LogCollectedMessages(logger, messages.Hits?.Count ?? default);
 
                 try
                 {
@@ -105,7 +105,7 @@ namespace BotTidus.Services.FaceReactionCollector
                             }
                             catch (Exception ex)
                             {
-                                logger.LogError(ex, "Failed to process message stamps: {MessageId}.", m.Id);
+                                MessageLogger.LogFailedToProcessMessageStamps(logger, ex, m.Id);
                                 // Continue because it is not a critical error. (e.g. the message is deleted)
                             }
 
@@ -117,7 +117,7 @@ namespace BotTidus.Services.FaceReactionCollector
                                 }
                                 catch (Exception e)
                                 {
-                                    logger.LogError(e, "Failed to save face score for message {MessageId} by user {UserId}", m.Id, m.UserId);
+                                    MessageLogger.LogFailedToSaveFaceScore(logger, e, m.Id, m.UserId);
                                 }
                             }
                         }
@@ -131,4 +131,13 @@ namespace BotTidus.Services.FaceReactionCollector
             while (await timer.WaitForNextTickAsync(stoppingToken));
         }
     }
+}
+
+static partial class MessageLogger
+{
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to process message stamps: {MessageId}.")]
+    public static partial void LogFailedToProcessMessageStamps(ILogger logger, Exception exception, Guid? messageId);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to save face score for message {MessageId} by user {UserId}.")]
+    public static partial void LogFailedToSaveFaceScore(ILogger logger, Exception exception, Guid? messageId, Guid? userId);
 }

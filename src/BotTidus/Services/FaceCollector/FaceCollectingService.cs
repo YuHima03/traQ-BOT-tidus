@@ -58,7 +58,7 @@ namespace BotTidus.Services.FaceCollector
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e, "Failed to add message face score for message {MessageId} by user {UserId}", m.Id, m.UserId);
+                    MessageLogger.LogFailedToAddMessageFaceScore(logger, e, m.Id!.Value, m.UserId!.Value);
                 }
 
                 if (positiveCnt != 0 && negativeCnt != 0)
@@ -87,4 +87,10 @@ namespace BotTidus.Services.FaceCollector
             return;
         }
     }
+}
+
+static partial class MessageLogger
+{
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to add message face score for message {MessageId} by user {UserId}")]
+    public static partial void LogFailedToAddMessageFaceScore(ILogger logger, Exception exception, Guid messageId, Guid userId);
 }

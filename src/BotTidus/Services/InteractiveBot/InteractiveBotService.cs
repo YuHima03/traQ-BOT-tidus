@@ -38,7 +38,7 @@ namespace BotTidus.Services.InteractiveBot
 
         protected override async ValueTask InitializeAsync(CancellationToken ct)
         {
-            _logger.LogInformation("Command prefix: {Prefix}", _botOptions.CommandPrefix);
+            MessageLogger.LogCommandPrefix(_logger, _botOptions.CommandPrefix);
             await base.InitializeAsync(ct);
         }
 
@@ -49,14 +49,14 @@ namespace BotTidus.Services.InteractiveBot
 
         protected override async ValueTask OnMessageCreatedAsync(MessageCreatedOrUpdatedEventArgs args, CancellationToken ct)
         {
-            _logger.LogDebug("Received message: {Message}", args.Message.Text);
+            MessageLogger.LogReceivedMessage(_logger, args.Message.Text);
 
             var stopwatch = Stopwatch.StartNew();
 
             if (await TryHandleAsCommandAsync(args.Message, ct))
             {
                 stopwatch.Stop();
-                _logger.LogInformation("Executed command [{ElapsedMilliseconds}ms]: {Command}", stopwatch.ElapsedMilliseconds, args.Message.Text);
+                MessageLogger.LogExecutedCommand(_logger, args.Message.Text, stopwatch.ElapsedMilliseconds);
                 return;
             }
             else if (MessageReactions.TryGetReaction(args.Message.Text, args.Message.Author.Id, out var reaction))
@@ -284,19 +284,31 @@ namespace BotTidus.Services.InteractiveBot
             {
                 case CommandErrorType.InternalError:
                     {
-                        _logger.LogWarning("Internal error occurred while executing command: {CommandText} -> {Result}", message.Text, result.ToString());
+                        if (_logger.IsEnabled(LogLevel.Warning))
+                        {
+                            var resultMessage = result.ToString();
+                            MessageLogger.LogCommandErrorInternalError(_logger, message.Text, resultMessage);
+                        }
                         await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Explosion.Id].PostAsync(req, cancellationToken: ct);
                         break;
                     }
                 case CommandErrorType.PermissionDenied:
                     {
-                        _logger.LogInformation("Permission denied: {CommandText} -> {Result}", message.Text, result.ToString());
+                        if (_logger.IsEnabled(LogLevel.Information))
+                        {
+                            var resultMessage = result.ToString();
+                            MessageLogger.LogCommandErrorPermissionDenied(_logger, message.Text, resultMessage);
+                        }
                         await traq.Messages[message.Id].Stamps[Constants.TraqStamps.NoEntrySign.Id].PostAsync(req, cancellationToken: ct);
                         break;
                     }
                 default:
                     {
-                        _logger.LogDebug("An error occurred: {CommandText} -> {Result}", message.Text, result.ToString());
+                        if (_logger.IsEnabled(LogLevel.Debug))
+                        {
+                            var resultMessage = result.ToString();
+                            MessageLogger.LogCommandErrorUnknown(_logger, message.Text, resultMessage);
+                        }
                         await traq.Messages[message.Id].Stamps[Constants.TraqStamps.Question.Id].PostAsync(req, cancellationToken: ct);
                         break;
                     }
@@ -333,4 +345,25 @@ namespace BotTidus.Services.InteractiveBot
             };
         }
     }
+}
+
+static partial class MessageLogger
+{
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Internal error occurred while executing command: {CommandText} -> {Result}")]
+    public static partial void LogCommandErrorInternalError(ILogger logger, string commandText, string? result);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Permission denied: {CommandText} -> {Result}")]
+    public static partial void LogCommandErrorPermissionDenied(ILogger logger, string commandText, string? result);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "An error occurred: {CommandText} -> {Result}")]
+    public static partial void LogCommandErrorUnknown(ILogger logger, string commandText, string? result);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Command prefix: {Prefix}")]
+    public static partial void LogCommandPrefix(ILogger logger, string? prefix);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Executed command [{ElapsedMilliseconds}ms]: {Command}")]
+    public static partial void LogExecutedCommand(ILogger logger, string command, long elapsedMilliseconds);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Received message: {Message}")]
+    public static partial void LogReceivedMessage(ILogger logger, string message);
 }
