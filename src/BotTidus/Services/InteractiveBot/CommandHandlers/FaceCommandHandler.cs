@@ -191,18 +191,18 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             """);
                             sb.AppendLine();
 
-
+                            
                             var filteredFaceCounts = faceCounts.ToAsyncEnumerable();
                             var cache_ = cache;
                             if (!_rank_includeBots)
                             {
                                 var traq_ = traq;
-                                filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => !(await traq_.Users.GetCachedUserAbstractAsync(x.UserId, cache_, ct)).IsBot);
+                                filteredFaceCounts = filteredFaceCounts.Where(async (x, ct) => !(await traq_.Users.GetCachedUserAbstractAsync(x.UserId, cache_, ct)).IsBot);
                             }
                             if (!_rank_includeDeactivatedUsers)
                             {
                                 var traq_ = traq;
-                                filteredFaceCounts = filteredFaceCounts.WhereAwaitWithCancellation(async (x, ct) => (await traq_.Users.GetCachedUserAsync(x.UserId, cache_, ct)).State is not 0);
+                                filteredFaceCounts = filteredFaceCounts.Where(async (x, ct) => (await traq_.Users.GetCachedUserAsync(x.UserId, cache_, ct)).State is not 0);
                             }
                             if (!_rank_all)
                             {
@@ -214,7 +214,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             int prevCount = int.MinValue;
 
                             await using var en = filteredFaceCounts.GetAsyncEnumerator(cancellationToken);
-                            while (await en.MoveNextAsync(cancellationToken))
+                            while (!cancellationToken.IsCancellationRequested && await en.MoveNextAsync())
                             {
                                 var current = en.Current;
                                 var username = await traq.Users.GetCachedUserNameAsync(current.UserId, cache, cancellationToken);
@@ -223,6 +223,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                 prevCount = count;
                                 rank++;
                             }
+                            cancellationToken.ThrowIfCancellationRequested();
 
                             return new() { IsSuccessful = true, Message = sb.ToString() };
                         }
