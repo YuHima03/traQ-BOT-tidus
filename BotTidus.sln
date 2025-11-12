@@ -1,15 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11206.111 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus", "src\BotTidus\BotTidus.csproj", "{F577FB21-6985-41AF-9E79-0A16DB90B34C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Traq.Extensions.Messages", "libs\dotnet-traq-extensions\src\Traq.Extensions.Messages\Traq.Extensions.Messages.csproj", "{A823A272-DF0B-D70E-1B20-71CDEEE133BA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Domain", "src\BotTidus.Domain\BotTidus.Domain.csproj", "{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Traq", "libs\dotnet-traq\src\Traq\Traq.csproj", "{2B39A528-CD04-B892-15E9-E89AAB90C0E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BotTidus.Infrastructure", "src\BotTidus.Infrastructure\BotTidus.Infrastructure.csproj", "{00B0C4B0-F9BB-4810-99C1-0E849B8C997C}"
 EndProject
@@ -23,18 +19,10 @@ Global
 		{F577FB21-6985-41AF-9E79-0A16DB90B34C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F577FB21-6985-41AF-9E79-0A16DB90B34C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F577FB21-6985-41AF-9E79-0A16DB90B34C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A823A272-DF0B-D70E-1B20-71CDEEE133BA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1AFE975-47F8-4D2C-BD2B-898318FAF0A1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2B39A528-CD04-B892-15E9-E89AAB90C0E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2B39A528-CD04-B892-15E9-E89AAB90C0E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2B39A528-CD04-B892-15E9-E89AAB90C0E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2B39A528-CD04-B892-15E9-E89AAB90C0E1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{00B0C4B0-F9BB-4810-99C1-0E849B8C997C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{00B0C4B0-F9BB-4810-99C1-0E849B8C997C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00B0C4B0-F9BB-4810-99C1-0E849B8C997C}.Release|Any CPU.ActiveCfg = Release|Any CPU
