@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/SolutionItem/">
+    <File Path=".editorconfig" />
     <File Path=".gitignore" />
     <File Path="docker-compose.yml" />
     <File Path="Dockerfile" />
