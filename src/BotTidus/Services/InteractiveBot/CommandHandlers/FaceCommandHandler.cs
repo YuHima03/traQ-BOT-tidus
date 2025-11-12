@@ -102,8 +102,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                 return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "Message id or uri is required." };
                             }
 
-                            Guid messageId;
-                            if (!Guid.TryParse(_messageIdOrUri, out messageId))
+                            if (!Guid.TryParse(_messageIdOrUri, out Guid messageId))
                             {
                                 if (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
                                     || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId))
@@ -191,7 +190,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                             """);
                             sb.AppendLine();
 
-                            
+
                             var filteredFaceCounts = faceCounts.ToAsyncEnumerable();
                             var cache_ = cache;
                             if (!_rank_includeBots)
@@ -238,8 +237,7 @@ namespace BotTidus.Services.InteractiveBot.CommandHandlers
                                 return new() { IsSuccessful = false, ErrorType = CommandErrorType.InvalidArguments, Message = "Message id or uri is required." };
                             }
 
-                            Guid messageId;
-                            if (!Guid.TryParse(_messageIdOrUri, out messageId))
+                            if (!Guid.TryParse(_messageIdOrUri, out Guid messageId))
                             {
                                 if (!Uri.TryCreate(_messageIdOrUri, UriKind.Absolute, out var uri)
                                     || !Guid.TryParse(uri.AbsolutePath.Split('/').LastOrDefault(), out messageId))

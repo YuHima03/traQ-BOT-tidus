@@ -63,11 +63,7 @@ namespace BotTidus.Helpers
             {
                 return id;
             }
-            var user = (await users.GetAsync(conf => conf.QueryParameters.Name = name, ct))?.SingleOrDefault();
-            if (user is null)
-            {
-                throw new Exception("User is not found.");
-            }
+            var user = ((await users.GetAsync(conf => conf.QueryParameters.Name = name, ct))?.SingleOrDefault()) ?? throw new Exception("User is not found.");
             var userId = user.Id!.Value;
             cache.Set(Prop_UsernameMapping, nameLower, userId, UserNameMappingExpiration);
             cache.Set(Prop_UsernameMapping, userId, nameLower, UserNameMappingExpiration);

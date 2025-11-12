@@ -59,10 +59,10 @@ namespace BotTidus.Helpers
                 Offset = 0,
                 SortAsGetSortQueryParameterType = null
             };
-            Action<Microsoft.Kiota.Abstractions.RequestConfiguration<Traq.Messages.MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters>> requestConfigurator = (conf) =>
+            void requestConfigurator(Microsoft.Kiota.Abstractions.RequestConfiguration<Traq.Messages.MessagesRequestBuilder.MessagesRequestBuilderGetQueryParameters> conf)
             {
                 conf.QueryParameters = queryParams;
-            };
+            }
 
             List<Traq.Models.Message> result = [];
             for (int requestCount = 0; requestCount < MaxSearchMessageLimit / 100; requestCount++)
