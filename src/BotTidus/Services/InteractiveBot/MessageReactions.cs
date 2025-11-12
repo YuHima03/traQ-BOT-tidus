@@ -18,17 +18,6 @@ static class MessageReactions
             }
             return true;
         }
-        else if ((s.EndsWith("どね") && !s.EndsWith("けどね") && !s.EndsWith("などね"))
-            || s.EndsWith(":done:"))
-        {
-            reaction = new Reaction(null, Constants.TraqStamps.Clap.Id);
-            return true;
-        }
-        else if (s.EndsWith("おわ"))
-        {
-            reaction = new Reaction(null, Constants.TraqStamps.Otsukare.Id);
-            return true;
-        }
 
         reaction = default;
         return false;
