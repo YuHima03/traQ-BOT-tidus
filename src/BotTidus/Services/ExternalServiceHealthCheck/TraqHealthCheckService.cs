@@ -34,32 +34,29 @@ class TraqHealthCheckService(
                 _ = await traq.Users.Me.GetAsync(cancellationToken: stoppingToken) ?? throw new Exception("Health check failed: traQ API '/users/me' response was null.");
                 publisher.CurrentStatus = TraqStatus.Available;
             }
+            catch (ApiException ex)
+            {
+                switch (ex.ResponseStatusCode)
+                {
+                    case (int)HttpStatusCode.Forbidden:
+                    case (int)HttpStatusCode.Unauthorized:
+                        publisher.CurrentStatus = TraqStatus.PermissionDenied;
+                        break;
+
+                    case (int)HttpStatusCode.ServiceUnavailable:
+                        publisher.CurrentStatus = TraqStatus.Unavailable;
+                        break;
+
+                    default:
+                        publisher.CurrentStatus = TraqStatus.Unknown;
+                        logger.LogError(ex, "Unknown response from the traQ service.");
+                        break;
+                }
+            }
             catch (Exception ex)
             {
-                if (ex is ApiException apiException)
-                {
-                    switch (apiException.ResponseStatusCode)
-                    {
-                        case (int)HttpStatusCode.Forbidden:
-                        case (int)HttpStatusCode.Unauthorized:
-                            publisher.CurrentStatus = TraqStatus.PermissionDenied;
-                            break;
-
-                        case (int)HttpStatusCode.ServiceUnavailable:
-                            publisher.CurrentStatus = TraqStatus.Unavailable;
-                            break;
-
-                        default:
-                            publisher.CurrentStatus = TraqStatus.Unknown;
-                            logger.LogError(ex, "Unknown response from the traQ service.");
-                            break;
-                    }
-                }
-                else
-                {
-                    publisher.CurrentStatus = TraqStatus.Unknown;
-                    logger.LogError(ex, "Failed to check traQ health.");
-                }
+                publisher.CurrentStatus = TraqStatus.Unknown;
+                logger.LogError(ex, "Failed to check traQ health.");
             }
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
