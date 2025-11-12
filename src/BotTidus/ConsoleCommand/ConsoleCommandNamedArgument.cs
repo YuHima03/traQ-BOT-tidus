@@ -1,9 +1,8 @@
-﻿namespace BotTidus.ConsoleCommand
-{
-    internal readonly ref struct ConsoleCommandNamedArgument
-    {
-        public ReadOnlySpan<char> Name { get; init; }
+﻿namespace BotTidus.ConsoleCommand;
 
-        public ReadOnlySpan<char> Value { get; init; }
-    }
+readonly ref struct ConsoleCommandNamedArgument
+{
+    public ReadOnlySpan<char> Name { get; init; }
+
+    public ReadOnlySpan<char> Value { get; init; }
 }

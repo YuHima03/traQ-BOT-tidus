@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace BotTidus.Services
 {
-    internal abstract class RecentMessageCollectingService(IServiceProvider services, TimeSpan interval)
+    abstract class RecentMessageCollectingService(IServiceProvider services, TimeSpan interval)
         : PeriodicBackgroundService(Options.Create(new PeriodicBackgroundServiceOptions { Delay = TimeSpan.FromSeconds(15), Period = interval }))
     {
         readonly ILogger<RecentMessageCollectingService> _logger = services.GetRequiredService<ILogger<RecentMessageCollectingService>>();
@@ -38,7 +38,7 @@ namespace BotTidus.Services
                 }
                 var messages = timeline.TakeWhile(m => m.CreatedAt > _lastCollectedAt).ToArray();
 
-                _logger.LogDebug("Collected {Count} messages.", messages.Length);
+                MessageLogger.LogCollectedMessages(_logger, messages.Length);
 
                 if (messages.Length != 0)
                 {
@@ -56,4 +56,10 @@ namespace BotTidus.Services
 
         protected abstract ValueTask OnCollectAsync(Traq.Models.ActivityTimelineMessage[] messages, CancellationToken ct);
     }
+}
+
+static partial class MessageLogger
+{
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Collected {Count} messages.")]
+    public static partial void LogCollectedMessages(ILogger logger, int count);
 }
